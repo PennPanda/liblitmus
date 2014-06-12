@@ -14,7 +14,6 @@ ARCH ?= ${host-arch}
 # LITMUS_KERNEL -- where to find the litmus kernel?
 LITMUS_KERNEL ?= ../litmus-rt
 
-
 # ##############################################################################
 # Internal configuration.
 
