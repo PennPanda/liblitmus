@@ -342,7 +342,9 @@ int main(int argc, char** argv)
 
 	init_litmus();
 
+    printf("MX:before task_mode(LITMUS_RT_TASK)\n");
 	ret = task_mode(LITMUS_RT_TASK);
+    printf("MX:after task_mode(LITMUS_RT_TASK)\n");
 	if (ret != 0)
 		bail_out("could not become RT task");
 
