@@ -11,7 +11,7 @@
 #include "litmus.h"
 #include "common.h"
 
-
+#define NUM_CACHE_PARTITIONS 	8
 
 static void usage(char *error) {
 	fprintf(stderr, "Error: %s\n", error);
@@ -24,6 +24,7 @@ static void usage(char *error) {
 		"COMMON-OPTS = [-w] [-s SCALE]\n"
 		"              [-p PARTITION/CLUSTER [-z CLUSTER SIZE]] [-c CLASS]\n"
 		"              [-X LOCKING-PROTOCOL] [-L CRITICAL SECTION LENGTH] [-Q RESOURCE-ID]"
+		"	       [-C num of cache partitions]"
 		"\n"
 		"WCET and PERIOD are milliseconds, DURATION is seconds.\n"
 		"CRITICAL SECTION LENGTH is in milliseconds.\n");
@@ -184,7 +185,7 @@ static int job(double exec_time, double program_end, int lock_od, double cs_leng
 	}
 }
 
-#define OPTSTR "p:c:wlveo:f:s:q:X:L:Q:"
+#define OPTSTR "p:c:C:wlveo:f:s:q:X:L:Q:"
 int main(int argc, char** argv)
 {
 	int ret;
@@ -192,6 +193,7 @@ int main(int argc, char** argv)
 	lt_t period;
 	double wcet_ms, period_ms;
 	unsigned int priority = LITMUS_LOWEST_PRIORITY;
+	unsigned int num_cache_partitions = NUM_CACHE_PARTITIONS;
 	int migrate = 0;
 	int cluster = 0;
 	int opt;
@@ -234,6 +236,11 @@ int main(int argc, char** argv)
 			class = str2class(optarg);
 			if (class == -1)
 				usage("Unknown task class.");
+			break;
+		case 'C':
+			num_cache_partitions = atoi(optarg);
+			if ( num_cache_partitions < 0 || num_cache_partitions > MAX_CACHE_PARTITIONS)
+				usage("Invalid partition number. Must be [0,16]");
 			break;
 		case 'e':
 			want_enforcement = 1;
