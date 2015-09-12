@@ -29,6 +29,7 @@
 #define PERIOD            100
 #define RELATIVE_DEADLINE 100
 #define EXEC_COST         10
+#define NUM_CACHE_PARTITIONS	8
 
 /* Catch errors.
  */
@@ -71,6 +72,7 @@ int main(int argc, char** argv)
 	param.exec_cost = ms2ns(EXEC_COST);
 	param.period = ms2ns(PERIOD);
 	param.relative_deadline = ms2ns(RELATIVE_DEADLINE);
+	param.num_cache_partitions = NUM_CACHE_PARTITIONS;
 
 	/* What to do in the case of budget overruns? */
 	param.budget_policy = NO_ENFORCEMENT;

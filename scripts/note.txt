@@ -1,0 +1,3 @@
+GSN-FPCA: no priority inversion
+1) test_sched_sequence_gFPca_no_cache_preemption.sh  passed
+2) 
