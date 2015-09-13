@@ -66,6 +66,16 @@ if [[ ${CASE} == 6 ]]; then
 	./rtspin 100 600 $DUR -q 5 -C 3 &
 fi
 
+# Pressure test with many tasks
+if [[ ${CASE} == 7 ]]; then
+	for((i=1; i<255;i+=1));do
+		period=$(( 500 + $(( ${i} * 10 )) ))
+		cp=`expr ${i} % 16`
+		echo "./rtspin 10 ${period} ${DUR} -q ${i} -C ${cp} &"
+		./rtspin 10 ${period} ${DUR} -q ${i} -C ${cp} &
+	done
+fi
+
 sleep ${DUR}
 sleep 2
 killall cat
