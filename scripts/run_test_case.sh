@@ -68,7 +68,8 @@ fi
 
 # Pressure test with many tasks
 if [[ ${CASE} == 7 ]]; then
-	for((i=1; i<255;i+=1));do
+	#for((i=1; i<255;i+=1));do
+	for((i=1; i<200;i+=1));do
 		period=$(( 500 + $(( ${i} * 10 )) ))
 		cp=`expr ${i} % 16`
 		echo "./rtspin 10 ${period} ${DUR} -q ${i} -C ${cp} &"
