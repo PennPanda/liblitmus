@@ -215,6 +215,7 @@ int main(int argc, char** argv)
 	const char *lock_namespace = "./rtspin-locks";
 	int protocol = -1;
 	double cs_length = 1; /* millisecond */
+	//long job_id = 0;
 
 	progname = argv[0];
 
@@ -353,11 +354,13 @@ int main(int argc, char** argv)
 		bail_out("could not get rt task params");
 	printf("MX: num_cache_partitions=%d\n", param_tmp.num_cache_partitions);
 
-	init_litmus();
+	ret = init_litmus();
+	if (ret < 0)
+		bail_out("init_litmus fails");
 
-	printf("MX:before task_mode(LITMUS_RT_TASK)\n");
+	//printf("MX:before task_mode(LITMUS_RT_TASK)\n");
 	ret = task_mode(LITMUS_RT_TASK);
-	printf("MX:after task_mode(LITMUS_RT_TASK)\n");
+	//printf("MX:after task_mode(LITMUS_RT_TASK)\n");
 	if (ret != 0)
 		bail_out("could not become RT task");
 
@@ -378,6 +381,7 @@ int main(int argc, char** argv)
 
 	start = wctime();
 
+	//job_id = 0;
 	if (file) {
 		/* use times read from the CSV file */
 		for (cur_job = 0; cur_job < num_jobs; ++cur_job) {
@@ -390,6 +394,10 @@ int main(int argc, char** argv)
 		/* convert to seconds and scale */
 		while (job(wcet_ms * 0.001 * scale, start + duration,
 			   lock_od, cs_length * 0.001));
+		//{
+		//	printf("task %d (%.2f, %.2f, %d) job %ld\n", getpid(),
+		//		period_ms, wcet_ms, num_cache_partitions, job_id++);
+		//}
 	}
 
 	ret = task_mode(BACKGROUND_TASK);
