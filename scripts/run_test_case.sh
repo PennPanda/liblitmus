@@ -1,15 +1,43 @@
 #!/bin/bash
 # cat /dev/litmus/log > debug.txt &
+source read_status.sh
+
 CASE=$1
 DUR=$2
-LOG=/root/debug_test${CASE}_dur${DUR}.txt
-WAIT=0
+OPT_WAIT=$3
+SCHED=$4
+LOG=/root/debug_test${CASE}_dur${DUR}_wait${OPT_WAIT}_sched${SCHED}.txt
+LITMUS_STATUS_FILE=/tmp/litmus_status.txt
+FILE_RANDOM=/tmp/random
 TASKNUM=0
+MAX_CHECK_STATUS=10 # we check if system is idle by MAX_CHECK_STATUS times
+util=0 #utilization of released tasks
 
-if [[ -z "${CASE}" || -z "${DUR}" ]];then
-	echo "[Usage] run_test_case test_case_id duration"
+check_system_idle() {
+	for((i=1; i<${MAX_CHECK_STATUS}; i+=1));do
+		cat /proc/litmus/stats > ${LITMUS_STATUS_FILE}
+		has_remain_task ${LITMUS_STATUS_FILE}
+		running=$?
+		if [[ "${running}" = "0" ]]; then
+			break;
+		fi
+		sleep $(( ${i} * 5 ))
+	done
+}
+
+if [[ -z "${CASE}" || -z "${DUR}" || -z "${OPT_WAIT}" || -z "${SCHED}" ]];then
+	echo "[Usage] run_test_case test_case_id duration wait sched"
 	exit 1;
 fi
+
+WAIT=""
+if [[ "${OPT_WAIT}" == "1" ]];then
+	WAIT="-w";
+fi
+if [[ "${OPT_WAIT}" == "0" ]];then
+	WAIT="";
+fi
+echo "WAIT=${WAIT}"
 
 cd ../
 echo "---------------------------------"
@@ -23,7 +51,7 @@ sudo killall cat
 sleep 1
 echo "reset the scheduler"
 setsched Linux
-setsched GSN-FPCA
+setsched ${SCHED}
 showsched
 sudo cat /dev/litmus/log > ${LOG} &
 echo "Now start test case ${CASE}"
@@ -38,7 +66,8 @@ if [[ ${CASE} == 2 ]]; then
 fi
 
 if [[ ${CASE} == 3 ]]; then
-	./rtspin 100 200 $DUR -q 2 -C 17 &
+	./rtspin 30 1000 $DUR -q 2 -C 8 &
+	./rtspin 900 1000 $DUR -q 99 -C 1 &
 fi
 
 # Check space constraint is valid
@@ -71,12 +100,12 @@ fi
 # Check the case when a RT task preempt another RT task via CPU only
 # scheduler should add the preempted task back to ready_queue
 if [[ ${CASE} == 7 ]]; then
-	./rtspin 50  150 $DUR -q 1 -C 1 -w ${WAIT} &
-	./rtspin 150 200 $DUR -q 2 -C 1 -w ${WAIT} &
-	./rtspin 150 300 $DUR -q 3 -C 1 -w ${WAIT} &
-	./rtspin 150 400 $DUR -q 4 -C 1 -w ${WAIT} &
-	./rtspin 150 600 $DUR -q 5 -C 1 -w ${WAIT} &
-	./rtspin 150 600 $DUR -q 6 -C 1 -w ${WAIT} &
+	./rtspin 50  150 $DUR -q 1 -C 1 ${WAIT} &
+	./rtspin 150 200 $DUR -q 2 -C 1 ${WAIT} &
+	./rtspin 150 300 $DUR -q 3 -C 1 ${WAIT} &
+	./rtspin 150 400 $DUR -q 4 -C 1 ${WAIT} &
+	./rtspin 150 600 $DUR -q 5 -C 1 ${WAIT} &
+	./rtspin 150 600 $DUR -q 6 -C 1 ${WAIT} &
 fi
 
 # Pressure test with many tasks
@@ -89,8 +118,8 @@ if [[ ${CASE} == 8 ]]; then
 		#exe=10, 11 #2 rtspins left
 		#exe=5 or 1 #no rtspin left
 		exe=10
-		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &"
-		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &
+		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &"
+		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &
 		#if [[ $(( i % 25 )) == 1 ]]; then
 		#	sleep 1;
 		#fi
@@ -107,8 +136,8 @@ if [[ ${CASE} == 9 ]]; then
 		#exe=10, 11 #2 rtspins left
 		#exe=5 or 1 #no rtspin left
 		exe=10
-		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &"
-		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &
+		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &"
+		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &
 		#if [[ $(( i % 25 )) == 1 ]]; then
 		#	sleep 1;
 		#fi
@@ -116,69 +145,113 @@ if [[ ${CASE} == 9 ]]; then
 	done
 fi
 
-# 200 tasks but only use 2 cores
-if [[ ${CASE} == 10 ]]; then
-	#for((i=1; i<255;i+=1));do
-	for((i=1; i<=200;i+=1));do
-		period=$(( $(( ${i} * 100 )) ))
-		cp=`expr ${i} % 16 + 1`
-		exe=1
-		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &"
-		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &
-		#if [[ $(( i % 25 )) == 1 ]]; then
-		#	sleep 1;
-		#fi
-	done
-fi
-
-# 350 tasks but only use 3.5 cores
-if [[ ${CASE} == 11 ]]; then
-	#for((i=1; i<255;i+=1));do
-	for((i=1; i<=350;i+=1));do
-		period=$(( $(( ${i} * 100 )) ))
-		cp=`expr ${i} % 16 + 1`
-		exe=1
-		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &"
-		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &
-		#if [[ $(( i % 25 )) == 1 ]]; then
-		#	sleep 1;
-		#fi
-	done
-fi
-
 # 390 tasks but only use 3.9 cores
-if [[ ${CASE} == 12 ]]; then
+if [[ ${CASE} == 10 ]]; then
 	#for((i=1; i<255;i+=1));do
 	for((i=1; i<=390;i+=1));do
 		period=$(( $(( ${i} * 100 )) ))
 		cp=`expr ${i} % 16 + 1`
 		exe=1
-		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &"
-		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &
+		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &"
+		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &
 		#if [[ $(( i % 25 )) == 1 ]]; then
 		#	sleep 1;
 		#fi
 	done
 fi
 
-# 200 tasks and overload system by using 5 cores
+# at most 100 light tasks with 'random' param; taskset utilization 350%
+if [[ ${CASE} == 11 ]]; then
+	for((i=1; i<=350;i+=1));do
+		shuf -i 10-10000 -n 1 > ${FILE_RANDOM}
+		rand=`cat /tmp/random`
+		period=${rand}
+		cp=`expr ${rand} % 16`
+		shuf -i 1-5 -n 1 > ${FILE_RANDOM}
+		rand=`cat /tmp/random`
+		exe=$(( $(( ${period} * ${rand} )) / 100 ))
+		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &"
+		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &
+		util=$(( ${util} +  $(( $(( ${exe} * 100 )) / ${period} )) ))
+		if [[ ${util} -ge 350 ]]; then
+			break;
+		fi
+	done
+fi
+
+# at most 100 medium tasks with 'random' param; taskset utilization 350%
+if [[ ${CASE} == 12 ]]; then
+	for((i=1; i<=350;i+=1));do
+		shuf -i 10-10000 -n 1 > ${FILE_RANDOM}
+		rand=`cat /tmp/random`
+		period=${rand}
+		cp=`expr ${rand} % 16`
+		shuf -i 5-50 -n 1 > ${FILE_RANDOM}
+		rand=`cat /tmp/random`
+		exe=$(( $(( ${period} * ${rand} )) / 100 ))
+		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &"
+		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &
+		util=$(( ${util} +  $(( $(( ${exe} * 100 )) / ${period} )) ))
+		if [[ ${util} -ge 350 ]]; then
+			break;
+		fi
+	done
+fi
+
+# at most 100 heavy tasks with 'random' param; taskset utilization 350%
 if [[ ${CASE} == 13 ]]; then
+	for((i=1; i<=350;i+=1));do
+		shuf -i 10-10000 -n 1 > ${FILE_RANDOM}
+		rand=`cat /tmp/random`
+		period=${rand}
+		cp=`expr ${rand} % 16`
+		shuf -i 51-100 -n 1 > ${FILE_RANDOM}
+		rand=`cat /tmp/random`
+		exe=$(( $(( ${period} * ${rand} )) / 100 ))
+		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &"
+		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &
+		util=$(( ${util} +  $(( $(( ${exe} * 100 )) / ${period} )) ))
+		if [[ ${util} -ge 350 ]]; then
+			break;
+		fi
+	done
+fi
+
+# 500 tasks with 'random' param; taskset utilization 500%
+if [[ ${CASE} == 14 ]]; then
 	#for((i=1; i<255;i+=1));do
 	for((i=1; i<=500;i+=1));do
-		period=$(( $(( ${i} * 100 )) ))
-		cp=`expr ${i} % 16 + 1`
-		exe=1
-		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &"
-		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} -w ${WAIT} &
+		shuf -i 10-10000 -n 1 > ${FILE_RANDOM}
+		rand=`cat /tmp/random`
+		period=${rand}
+		cp=`expr ${rand} % 16`
+		shuf -i 1-100 -n 1 > ${FILE_RANDOM}
+		rand=`cat /tmp/random`
+		exe=$(( $(( ${period} * ${rand} )) / 100 ))
+		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &"
+		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &
+		util=$(( ${util} +  $(( $(( ${exe} * 100 )) / ${period} )) ))
+		if [[ ${util} -ge 500 ]]; then
+			break;
+		fi
 	done
 fi
 
 sleep 1
-if [[ "${WAIT}" == "1" ]]; then
+if [[ "${WAIT}" == "-w" ]]; then
 	./release_ts -f ${TASKNUM} &
 fi
 sleep ${DUR}
-sleep 60
+
+check_system_idle
+
+if [[ "${i}" == "${MAX_CHECK_STATUS}" ]]; then
+	echo "[ATTENTION] Has task remaining in system after experiment!"
+	echo "Force all RT tasks exit..."
+	killall -9 rtspin
+	check_system_idle
+fi
+
 #killall cat
 echo "[DONE] test=${CASE} dur=${DUR} log=${LOG}"
 echo "---------------------------------"
