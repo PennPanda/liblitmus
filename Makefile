@@ -18,7 +18,7 @@ LITMUS_KERNEL ?= ../litmus-rt
 # Internal configuration.
 
 # compiler flags
-flags-debug    = -O2 -Wall -Werror -g -Wdeclaration-after-statement
+flags-debug    = -O0 -Wall -Werror -g -Wdeclaration-after-statement
 flags-api      = -D_XOPEN_SOURCE=600 -D_GNU_SOURCE
 
 # architecture-specific flags
@@ -71,7 +71,7 @@ AR  := ${CROSS_COMPILE}${AR}
 # Targets
 
 all     = lib ${rt-apps}
-rt-apps = cycles base_task rt_launch rtspin release_ts measure_syscall \
+rt-apps = cycles base_task rt_launch rtspin rtspin_cache release_ts measure_syscall \
 	  base_mt_task uncache runtests
 
 .PHONY: all lib clean dump-config TAGS tags cscope help doc
@@ -224,6 +224,9 @@ obj-rt_launch = rt_launch.o common.o
 
 obj-rtspin = rtspin.o common.o
 lib-rtspin = -lrt
+
+obj-rtspin_cache = rtspin_cache.o common.o
+lib-rtspin_cache = -lrt
 
 obj-uncache = uncache.o
 lib-uncache = -lrt
