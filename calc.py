@@ -4,10 +4,11 @@ import math
 import sys
 
 class Event:
-	def __init__(self, task, id, job, type, time):
+	def __init__(self, task, id, job, job_no, type, time):
 		self.task = task
 		self.id = id
 		self.job = job
+		self.jobno = job_no
 		self.type = type
 		self.time = time
 
@@ -43,7 +44,7 @@ def read(filename):
 			if job_no < 3:
 				continue
 
-			event = Event(task, id, job, type, time)
+			event = Event(task, id, job, job_no, type, time)
 
 			if job not in jobs:
 				jobs[job] = dict()
@@ -77,13 +78,16 @@ def filterout(jobs):
 
 	return jobs
 
-def calculate(jobs, deadline):
+def calculate(jobs, deadline, pid):
 	joblist = {}
 
 	for job in jobs:
 		ajob = jobs[job]
 
-		task_id = ajob['switch_to'].task
+		sto = ajob['switch_to']
+		saway = ajob['switch_away']
+
+		task_id = sto.task
 
 		if task_id not in joblist:
 			joblist[task_id] = {
@@ -91,12 +95,15 @@ def calculate(jobs, deadline):
 				'wcet': 0,
 				'mcet': 1000000000000,
 				'missed': 0,
-				'avg': 0}
+				'avg': 0,
+				'alldata': {}
+				}
 
-		acet = ajob['switch_away'].time - ajob['switch_to'].time
+		acet = saway.time - sto.time
 		joblist[task_id]['cet'].append(acet)
-
-		sys.stderr.write("task: {} job: {} cet: {}\n".format(task_id, ajob['switch_away'].job, acet))
+		joblist[task_id]['alldata'][saway.jobno] = {
+			'job': sto.job,
+			'cet': acet}
 
 		if acet > deadline:
 			joblist[task_id]['missed'] += 1
@@ -113,18 +120,40 @@ def calculate(jobs, deadline):
 	
 
 def main():
+
+	if len(sys.argv) < 3 or len(sys.argv) > 4:
+		print "Usage: ./calc.py {wcet} {pid} {file}"
+		print "       ./calc.py {wcet} {file}"
+		sys.exit(0)
+
 	deadline = int(sys.argv[1]) * 1000000 # ms to ns
-	filename = sys.argv[2]
+
+	if len(sys.argv) == 3:
+		filename = sys.argv[2]
+		pid = -1
+	else:
+		filename = sys.argv[3]
+		pid = int(sys.argv[2])
 
 	jobs = read(filename)
 
 	filterout(jobs)
 
 
-	joblist = calculate(jobs, deadline)
+	joblist = calculate(jobs, deadline, pid)
 
 	for job, stat in joblist.iteritems():
-		print "task %d wcet %d avg %d min %d missed %d" % (job, stat['wcet'], stat['avg'], stat['mcet'], stat['missed'])
+		if pid <=0 or pid == job:
+			for key in sorted(stat['alldata']):
+				sys.stderr.write("task: {} job: {} cet: {}\n" \
+					.format(job, 
+					stat['alldata'][key]['job'],
+					stat['alldata'][key]['cet']))
+
+			print "task %d wcet %d avg %d min %d missed %d" % \
+				(job, stat['wcet'], 
+				stat['avg'], stat['mcet'], 
+				stat['missed'])
 		
 if __name__ == "__main__":
 	main()

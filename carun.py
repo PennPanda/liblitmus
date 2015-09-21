@@ -100,9 +100,10 @@ def main(task_file):
 		for taskset, tasks in tasksets.iteritems():
 			print "taskset: " + taskset
 
-			debug_arg = './debug_trace.sh {}-{}'.format(scheduler, taskset)
+			debug_arg = 'cat /dev/litmus/log'
+			debug_file = open("debug_log_{}-{}".format(scheduler, taskset), "w")
 
-			debugcat = subprocess.Popen(debug_arg.split())
+			debugcat = subprocess.Popen(debug_arg.split(), stdout=debug_file, stderr=None)
 
 			task_list = []
 			for taskinfo in tasks:
@@ -148,6 +149,9 @@ def main(task_file):
 			rts_arg = './release_ts -f {}'.format(len(task_list))
 			rts = subprocess.Popen(rts_arg.split())
 
+			# assume the first task is the target
+			target_pid = task_list[0].pid
+
 			for t in task_list:
 				t.wait()
 
@@ -156,6 +160,7 @@ def main(task_file):
 		        trace.wait()
 
 			debugcat.kill()
+			debug_file.close()
 
 			out_filename = "{}-all.out" \
 				.format(trace_prefix)
@@ -174,7 +179,9 @@ def main(task_file):
 
 			outfile.close()
 
-			calc_arg = './calc.py {} {}'.format(wcet, out_filename)
+			
+			calc_arg = './calc.py {} {} {}' \
+				.format(wcet, target_pid, out_filename)
 			calc = subprocess.Popen(calc_arg.split(), stdout=subprocess.PIPE, stderr=None)
 			output, err = calc.communicate()
 			" ".join(output.split())
@@ -184,16 +191,11 @@ def main(task_file):
 
 			token = output.split()
 
-			pid = task_list[0].pid
+			result_file.write("%15s, %10s, %12d, %12d, %10d\n" % \
+				(scheduler, taskset, 
+				int(token[3]), int(token[5]), 
+				int(token[7]))) 
 
-			try:
-				for i in range(0,len(task_list)):
-			#	print "{} {}".format(pid, token[i*10+1])
-			#	if token[i * 10 + 1] == pid:
-					result_file.write("%15s, %10s, %12d, %12d, %10d\n" % \
-						(scheduler, taskset, int(token[i*10+3]), int(token[i*10+5]), int(token[i*10+7]))) 
-			except:
-				pass
 			time.sleep(1)
 
 	result_file.close()
