@@ -167,17 +167,24 @@ static int loop_once(int wss, int shuffle) {
 }
 
 //////////////////////////////////////////
-
+#define ONE_SEC 1000000000
 static int job(int wss, int shuffle, double exec_time, double program_end)
 {
 	if (wctime() > program_end)
 		return 0;
 	else {
 		register unsigned int iter = 0;
+        	struct timespec start, finish;
 
+                clock_gettime(CLOCK_REALTIME, &start);
+ 
 		while(iter++ < loops) {
 			loop_once(wss, shuffle);
 		}
+
+                clock_gettime(CLOCK_REALTIME, &finish);
+                printf("%ld %ld %ld\n", finish.tv_sec - start.tv_sec, finish.tv_nsec - start.tv_nsec,
+                    (finish.tv_sec - start.tv_sec)*ONE_SEC + (finish.tv_nsec - start.tv_nsec));
 
 		sleep_next_period();
 		return 1;

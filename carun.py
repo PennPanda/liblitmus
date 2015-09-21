@@ -48,7 +48,7 @@ def parse_task_file(task_file):
 
 		else:
 			token1 = a_line.split(',')
-			if len(token1) == 8:
+			if len(token1) == 9:
 				task = token1[0]
 				if tasksets[task] is None:
 					print "not existing taskset: " + task
@@ -67,7 +67,8 @@ def parse_task_file(task_file):
 					'period': token1[5],
 					'random': token1[6],
 					'loop': token1[7],
-					'duration': duration}
+					'duration': duration,
+					'priority': token1[8]}
 
 				#print "a task: {}".format(a_task)
 				tasksets[task].append(a_task)
@@ -99,21 +100,33 @@ def main(task_file):
 		for taskset, tasks in tasksets.iteritems():
 			print "taskset: " + taskset
 
-			#debug_arg = './debug_trace.sh {}-{}'.format(scheduler, taskset)
+			debug_arg = './debug_trace.sh {}-{}'.format(scheduler, taskset)
 
-			#debugcat = subprocess.Popen(debug_arg.split())
+			debugcat = subprocess.Popen(debug_arg.split())
 
 			task_list = []
 			for taskinfo in tasks:
-				task_arg = "./{} -w -p {} -C {} -l {} -r {} {} {} {}" \
-					.format(taskinfo['name'],
-						taskinfo['cpu'],
-						taskinfo['cache_partition'],
-						taskinfo['loop'],
-						taskinfo['random'],
-						taskinfo['wcet'],
-						taskinfo['period'],
-						taskinfo['duration'])
+				if taskinfo['name'].startswith('rtspin'):
+					task_arg = "./{} -w -q {} -C {} {} {} {}" \
+						.format(taskinfo['name'],
+							taskinfo['priority'],
+							taskinfo['cache_partition'],
+							taskinfo['wcet'],
+							taskinfo['period'],
+							taskinfo['duration'])
+	
+				else:
+					#task_arg = "./{} -w -p {} -q {} -C {} -l {} -r {} {} {} {}" \
+					task_arg = "./{} -w -q {} -C {} -l {} -r {} {} {} {}" \
+						.format(taskinfo['name'],
+				#			taskinfo['cpu'],
+							taskinfo['priority'],
+							taskinfo['cache_partition'],
+							taskinfo['loop'],
+							taskinfo['random'],
+							taskinfo['wcet'],
+							taskinfo['period'],
+							taskinfo['duration'])
 				print task_arg
 				
 				atask = subprocess.Popen(task_arg.split())
@@ -142,7 +155,7 @@ def main(task_file):
 		        trace.send_signal(signal.SIGUSR1)
 		        trace.wait()
 
-			#debugcat.kill()
+			debugcat.kill()
 
 			out_filename = "{}-all.out" \
 				.format(trace_prefix)
@@ -171,9 +184,16 @@ def main(task_file):
 
 			token = output.split()
 
-			result_file.write("%15s, %10s, %12d, %12d, %10d\n" % \
-				(scheduler, taskset, int(token[3]), int(token[5]), int(token[7]))) 
+			pid = task_list[0].pid
 
+			try:
+				for i in range(0,len(task_list)):
+			#	print "{} {}".format(pid, token[i*10+1])
+			#	if token[i * 10 + 1] == pid:
+					result_file.write("%15s, %10s, %12d, %12d, %10d\n" % \
+						(scheduler, taskset, int(token[i*10+3]), int(token[i*10+5]), int(token[i*10+7]))) 
+			except:
+				pass
 			time.sleep(1)
 
 	result_file.close()

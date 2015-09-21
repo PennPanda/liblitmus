@@ -72,7 +72,7 @@ AR  := ${CROSS_COMPILE}${AR}
 
 all     = lib ${rt-apps}
 rt-apps = cycles base_task rt_launch rtspin rtspin_cache release_ts measure_syscall \
-	  base_mt_task uncache runtests
+	  base_mt_task uncache runtests ca_spin ca_thrash
 
 .PHONY: all lib clean dump-config TAGS tags cscope help doc
 
@@ -227,6 +227,12 @@ lib-rtspin = -lrt
 
 obj-rtspin_cache = rtspin_cache.o common.o
 lib-rtspin_cache = -lrt
+
+obj-ca_spin = ca_spin.o common.o
+lib-ca_spin = -lrt
+
+obj-ca_thrash = ca_thrash.o common.o
+lib-ca_thrash = -lrt
 
 obj-uncache = uncache.o
 lib-uncache = -lrt

@@ -65,11 +65,11 @@ def filterout(jobs):
 		ajob = jobs[job]
 
 		if len(ajob) < 3:
-			sys.stderr.write("drop: {}".format(ajob))
+			sys.stderr.write("drop: {}\n".format(ajob))
 			dellist.append(job)
 
 		elif 'switch_to' not in ajob or 'switch_away' not in ajob:
-			sys.stderr.write("drop: {}".format(ajob))
+			sys.stderr.write("drop: {}\n".format(ajob))
 			dellist.append(job)
 
 	for job in dellist:
@@ -95,6 +95,8 @@ def calculate(jobs, deadline):
 
 		acet = ajob['switch_away'].time - ajob['switch_to'].time
 		joblist[task_id]['cet'].append(acet)
+
+		sys.stderr.write("task: {} job: {} cet: {}\n".format(task_id, ajob['switch_away'].job, acet))
 
 		if acet > deadline:
 			joblist[task_id]['missed'] += 1
