@@ -133,6 +133,11 @@ def main(task_file):
 				atask = subprocess.Popen(task_arg.split())
 				task_list.append(atask)
 				print "pid=" + str(atask.pid)
+
+				if taskinfo['name'].endswith("spin"):
+					target_pid = atask.pid
+					print "target_pid=" + str(target_pid);
+
 				wcet = taskinfo['wcet']
 
 			trace_prefix = "{}-{}-{}" \
@@ -148,9 +153,6 @@ def main(task_file):
 
 			rts_arg = './release_ts -f {}'.format(len(task_list))
 			rts = subprocess.Popen(rts_arg.split())
-
-			# assume the first task is the target
-			target_pid = task_list[0].pid
 
 			for t in task_list:
 				t.wait()
