@@ -291,12 +291,13 @@ int main(int argc, char** argv)
 	}
 
 	//set up wss based on num_cache_partitions
-	wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 1) +
-		KB_IN_CACHE_PARTITION / 2;
+	//wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 1) +
+	//	KB_IN_CACHE_PARTITION / 64;
+	wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 2);
 
-	arena_size = wss * 1024;
-	arena = allocate_arena(arena_size, 0, 0);
-	init_arena(arena, arena_size, shuffle);
+	//arena_size = wss * 1024;
+	//arena = allocate_arena(arena_size, 0, 0);
+	//init_arena(arena, arena_size, shuffle);
 
 	init_rt_task_param(&param);
 	param.exec_cost = wcet;
@@ -327,6 +328,10 @@ int main(int argc, char** argv)
 	if (ret != 0)
 		bail_out("could not become RT task");
 
+	sleep(1);
+	arena_size = wss * 1024;
+	arena = allocate_arena(arena_size, 0, 0);
+	init_arena(arena, arena_size, shuffle);
 //	mlockall(MCL_CURRENT | MCL_FUTURE);
 
 	if (wait) {

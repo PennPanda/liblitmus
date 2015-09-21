@@ -291,9 +291,9 @@ int main(int argc, char** argv)
 	//wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 1) +
 	//	KB_IN_CACHE_PARTITION / 2;
 
-	arena_size = WSS * 1024;
-	arena = allocate_arena(arena_size, 0, 0);
-	init_arena(arena, arena_size, shuffle);
+	//arena_size = WSS * 1024;
+	//arena = allocate_arena(arena_size, 0, 0);
+	//init_arena(arena, arena_size, shuffle);
 
 	init_rt_task_param(&param);
 	param.exec_cost = wcet;
@@ -329,6 +329,11 @@ int main(int argc, char** argv)
 		printf("could not become RT task");
 		bail_out("could not become RT task");
 	}
+
+	sleep(5);
+	arena_size = WSS * 1024;
+	arena = allocate_arena(arena_size, 0, 0);
+	init_arena(arena, arena_size, shuffle);
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
