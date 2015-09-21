@@ -330,18 +330,18 @@ int main(int argc, char** argv)
 		bail_out("could not become RT task");
 	}
 
+	if (wait) {
+		ret = wait_for_ts_release();
+		if (ret != 0)
+			bail_out("wait_for_ts_release()");
+	}
+
 	sleep(5);
 	arena_size = WSS * 1024;
 	arena = allocate_arena(arena_size, 0, 0);
 	init_arena(arena, arena_size, shuffle);
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
-
-	if (wait) {
-		ret = wait_for_ts_release();
-		if (ret != 0)
-			bail_out("wait_for_ts_release()");
-	}
 
 	start = wctime();
 

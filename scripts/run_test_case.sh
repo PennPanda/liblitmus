@@ -49,6 +49,9 @@ sudo killall rtspin
 sudo rm ${LOG}
 sudo killall cat
 sleep 1
+echo "set the environment"
+./init.sh ${SCHED}
+sleep 1
 echo "reset the scheduler"
 setsched Linux
 setsched ${SCHED}
@@ -59,6 +62,38 @@ echo "Now start test case ${CASE}"
 #now at liblitmus folder
 if [[ ${CASE} == 1 ]]; then
 	./rtspin 100 200 $DUR -q 2 -C 0 &
+fi
+
+if [[ ${CASE} == 98 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 16 -S 384 -l 100 -r 1 400 1000 ${DUR} &
+fi
+
+if [[ ${CASE} == 99 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 15 -S 384 -l 100 -r 1 400 1000 ${DUR} &
+fi
+
+if [[ ${CASE} == 100 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 8 -S 384 -l 100 -r 1 400 1000 ${DUR} &
+fi
+
+if [[ ${CASE} == 101 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 16 -S 384 -l 100 -r 1 400 1000 ${DUR} &
+	./ca_thrash ${WAIT} -q 9 -C 0 -l 1000 -r 0 900 1000 ${DUR} &
+fi
+
+if [[ ${CASE} == 102 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 15 -S 384 -l 100 -r 1 400 1000 ${DUR} &
+	./ca_thrash ${WAIT} -q 9 -C 1 -l 1000 -r 0 999 1000 ${DUR} &
+fi
+
+if [[ ${CASE} == 103 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 8 -S 384 -l 100 -r 1 400 1000 ${DUR} &
+	./ca_thrash ${WAIT} -q 9 -C 8 -l 1000 -r 0 999 1000 ${DUR} &
+fi
+
+if [[ ${CASE} == 104 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 8 -S 384 -l 100 -r 1 400 1000 ${DUR} &
+	./ca_thrash ${WAIT} -q 9 -C 1 -l 1000 -r 0 900 1000 ${DUR} &
 fi
 
 if [[ ${CASE} == 2 ]]; then

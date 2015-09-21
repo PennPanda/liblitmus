@@ -191,7 +191,7 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
 	}
 }
 
-#define OPTSTR "p:c:C:weq:r:l:"
+#define OPTSTR "p:c:C:weq:r:l:S:"
 int main(int argc, char** argv)
 {
 	int ret;
@@ -212,6 +212,7 @@ int main(int argc, char** argv)
 	size_t arena_size = 0;
 	int wss = 512;
 	int shuffle = 1;
+	int size_kb = -1;
 
 	progname = argv[0];
 
@@ -238,6 +239,9 @@ int main(int argc, char** argv)
 			num_cache_partitions = atoi(optarg);
 			if ( num_cache_partitions < 0 || num_cache_partitions > MAX_CACHE_PARTITIONS)
 				usage("Invalid partition number. Must be [0,16]");
+			break;
+		case 'S':
+			size_kb = atoi(optarg);
 			break;
 		case 'e':
 			want_enforcement = 1;
@@ -293,7 +297,11 @@ int main(int argc, char** argv)
 	//set up wss based on num_cache_partitions
 	//wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 1) +
 	//	KB_IN_CACHE_PARTITION / 64;
-	wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 2);
+	if (size_kb == -1)
+		wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 2);
+	else
+		wss = size_kb;
+	printf("wss=%dKB\n", wss);
 
 	//arena_size = wss * 1024;
 	//arena = allocate_arena(arena_size, 0, 0);
@@ -328,17 +336,17 @@ int main(int argc, char** argv)
 	if (ret != 0)
 		bail_out("could not become RT task");
 
-	sleep(1);
-	arena_size = wss * 1024;
-	arena = allocate_arena(arena_size, 0, 0);
-	init_arena(arena, arena_size, shuffle);
-//	mlockall(MCL_CURRENT | MCL_FUTURE);
-
 	if (wait) {
 		ret = wait_for_ts_release();
 		if (ret != 0)
 			bail_out("wait_for_ts_release()");
 	}
+
+	sleep(5);
+	arena_size = wss * 1024;
+	arena = allocate_arena(arena_size, 0, 0);
+	init_arena(arena, arena_size, shuffle);
+	mlockall(MCL_CURRENT | MCL_FUTURE);
 
 	start = wctime();
 

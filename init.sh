@@ -2,6 +2,9 @@
 
 SCHEDULER=$1
 
+echo "Remove debug_log*"
+rm -f debug_log*
+
 echo 0 > /proc/sys/litmus/l1_prefetch
 echo 0 > /proc/sys/litmus/l2_data_prefetch
 echo 0 > /proc/sys/litmus/l2_prefetch_hint

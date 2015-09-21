@@ -1,16 +1,18 @@
 
 #Scheduler list
-SCHEDULERS=GSN-FPCA
-DURATION=20
+#SCHEDULERS=GSN-FPCA,GSN-FP
+SCHEDULERS=GSN-FP,GSN-FPCA
+DURATION=30
 
 #TASKSET=name
 TASKSET=idle
 
 #taskset, name, cpu, cachepartition, wcet(ms), period(ms), random(1)/sequential(0), loop, priority
-idle,ca_spin,0,8,20,50,1,100,1
+#idle,ca_spin,0,8,20,50,1,100,1
+idle,ca_spin,8,16,400,1000,1,100,1
 
 TASKSET=loaded
-loaded,ca_thrash,1,8,900,1000,0,1000,15
-loaded,ca_spin,0,8,20,50,1,100,1
 #loaded,rtspin,1,1,1000,1000,0,1000,15
+loaded,ca_thrash,1,8,900,1000,0,1000,15
+loaded,ca_spin,0,8,400,1000,1,100,1
 
