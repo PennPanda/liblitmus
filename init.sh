@@ -2,7 +2,8 @@
 
 SCHEDULER=$1
 
-./setsched $SCHEDULER
+echo "Remove debug_log*"
+rm -f debug_log*
 
 echo 0 > /proc/sys/litmus/l1_prefetch
 echo 0 > /proc/sys/litmus/l2_data_prefetch
@@ -18,3 +19,4 @@ echo 0xffff > /proc/sys/litmus/C2_LB_way
 echo 0xffff > /proc/sys/litmus/C3_LA_way
 echo 0xffff > /proc/sys/litmus/C3_LB_way
 
+./setsched $SCHEDULER

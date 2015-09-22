@@ -163,7 +163,9 @@ def main(task_file):
 		        trace.send_signal(signal.SIGUSR1)
 		        trace.wait()
 
+			time.sleep(10)
 			debugcat.kill()
+			subprocess.Popen("killall -9 cat", shell=True, stdout=None);
 			debug_file.close()
 
 			out_filename = "{}-all.out" \

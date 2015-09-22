@@ -229,6 +229,7 @@ int main(int argc, char** argv)
 	int wss = 0;
 	int shuffle = 1;
 	size_t arena_size;
+	int size_kb = -1;
 
 	progname = argv[0];
 
@@ -256,6 +257,9 @@ int main(int argc, char** argv)
 			if ( num_cache_partitions < 0 || num_cache_partitions > MAX_CACHE_PARTITIONS)
 				usage("Invalid partition number. Must be [0,16]");
 			break;
+		case 'S':
+			size_kb = atoi(optarg);
+			break;
 		case 'e':
 			want_enforcement = 1;
 			break;
@@ -267,9 +271,6 @@ int main(int argc, char** argv)
 			break;
 		case 'l':
 			loops = atoi(optarg);
-			break;
-		case 'S':
-			wss = atoi(optarg);
 			break;
 		case ':':
 			usage("Argument missing.");
@@ -311,11 +312,11 @@ int main(int argc, char** argv)
 	}
 
 	//set up wss based on num_cache_partitions
-	if (wss == 0) {
-		wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 1) +
-			KB_IN_CACHE_PARTITION / 2;
-	}
-
+	if (size_kb == -1)
+		wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 2);
+	else
+		wss = size_kb;
+	printf("wss=%dKB\n", wss);
 	arena_size = wss * 1024;
 
 	init_rt_task_param(&param);
