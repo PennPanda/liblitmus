@@ -191,7 +191,24 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
 	}
 }
 
-#define OPTSTR "p:c:C:weq:r:l:"
+static void initialize(size_t arena_size, int shuffle) {
+       	struct timespec start, finish;
+
+        clock_gettime(CLOCK_REALTIME, &start);
+ 
+	arena = allocate_arena(arena_size, 0, 0);
+	init_arena(arena, arena_size, shuffle);
+	
+        clock_gettime(CLOCK_REALTIME, &finish);
+        printf("init: %ld %ld %ld\n", finish.tv_sec - start.tv_sec, 
+		finish.tv_nsec - start.tv_nsec,
+        	(finish.tv_sec - start.tv_sec)*ONE_SEC + 
+		(finish.tv_nsec - start.tv_nsec));
+
+	sleep_next_period();
+}
+
+#define OPTSTR "p:c:C:weq:r:l:S:"
 int main(int argc, char** argv)
 {
 	int ret;
@@ -209,9 +226,9 @@ int main(int argc, char** argv)
 	task_class_t class = RT_CLASS_HARD;
 	struct rt_task param, param_tmp;
 
-	size_t arena_size = 0;
-	int wss = 512;
+	int wss = 0;
 	int shuffle = 1;
+	size_t arena_size;
 
 	progname = argv[0];
 
@@ -250,6 +267,9 @@ int main(int argc, char** argv)
 			break;
 		case 'l':
 			loops = atoi(optarg);
+			break;
+		case 'S':
+			wss = atoi(optarg);
 			break;
 		case ':':
 			usage("Argument missing.");
@@ -291,12 +311,12 @@ int main(int argc, char** argv)
 	}
 
 	//set up wss based on num_cache_partitions
-	wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 1) +
-		KB_IN_CACHE_PARTITION / 2;
+	if (wss == 0) {
+		wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 1) +
+			KB_IN_CACHE_PARTITION / 2;
+	}
 
 	arena_size = wss * 1024;
-	arena = allocate_arena(arena_size, 0, 0);
-	init_arena(arena, arena_size, shuffle);
 
 	init_rt_task_param(&param);
 	param.exec_cost = wcet;
@@ -327,13 +347,13 @@ int main(int argc, char** argv)
 	if (ret != 0)
 		bail_out("could not become RT task");
 
-//	mlockall(MCL_CURRENT | MCL_FUTURE);
-
 	if (wait) {
 		ret = wait_for_ts_release();
 		if (ret != 0)
 			bail_out("wait_for_ts_release()");
 	}
+
+	initialize(arena_size, shuffle);
 
 	start = wctime();
 
