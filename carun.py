@@ -48,7 +48,7 @@ def parse_task_file(task_file):
 
 		else:
 			token1 = a_line.split(',')
-			if len(token1) == 9:
+			if len(token1) == 10:
 				task = token1[0]
 				if tasksets[task] is None:
 					print "not existing taskset: " + task
@@ -68,7 +68,8 @@ def parse_task_file(task_file):
 					'random': token1[6],
 					'loop': token1[7],
 					'duration': duration,
-					'priority': token1[8]}
+					'priority': token1[8],
+					'wss': token1[9]}
 
 				#print "a task: {}".format(a_task)
 				tasksets[task].append(a_task)
@@ -118,13 +119,14 @@ def main(task_file):
 	
 				else:
 					#task_arg = "./{} -w -p {} -q {} -C {} -l {} -r {} {} {} {}" \
-					task_arg = "./{} -w -q {} -C {} -l {} -r {} {} {} {}" \
+					task_arg = "./{} -w -q {} -C {} -l {} -r {} -S {} {} {} {}" \
 						.format(taskinfo['name'],
 				#			taskinfo['cpu'],
 							taskinfo['priority'],
 							taskinfo['cache_partition'],
 							taskinfo['loop'],
 							taskinfo['random'],
+							taskinfo['wss'],
 							taskinfo['wcet'],
 							taskinfo['period'],
 							taskinfo['duration'])
