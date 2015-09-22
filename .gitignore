@@ -23,6 +23,10 @@ showst
 rtspin
 cycles
 measure_syscall
+ca_spin
+ca_thrash
+rtspin_cache
+uncache
 
 # build system files
 .config
@@ -32,3 +36,10 @@ test_catalog.inc
 # files copied in from the kernel tree
 include/litmus
 arch/*/include/asm
+arch/*/include/uapi
+
+# script results
+*.bin
+*.out
+*.csv
+debug*
