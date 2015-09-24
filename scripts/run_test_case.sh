@@ -9,6 +9,7 @@ OPT_WAIT=$3
 SCHED=$4
 LOG=/root/debug_test${CASE}_dur${DUR}_wait${OPT_WAIT}_sched${SCHED}.txt
 ST_TRACE_NAME=trace_test${CASE}_dur${DUR}_wait${OPT_WAIT}_sched${SCHED}
+ST_MSG_TRACE_NAME=trace_msg_test${CASE}_dur${DUR}_wait${OPT_WAIT}_sched${SCHED}
 LITMUS_STATUS_FILE=/tmp/litmus_status.txt
 FILE_RANDOM=/tmp/random
 TASKNUM=0
@@ -53,7 +54,7 @@ sudo killall ca_thrash
 sudo killall cpu_spin
 sudo killall st_trace
 sudo killall ftcat
-sudo rm ${LOG}
+sudo rm -f ${LOG}
 sudo killall cat
 sleep 1
 echo "set the environment"
@@ -66,7 +67,13 @@ showsched
 sudo cat /dev/litmus/log > ${LOG} &
 echo "Now start test case ${CASE}"
 # start feather trace
-st_trace ${ST_TRACE_NAME} &
+st_trace -s ${ST_TRACE_NAME} &
+
+# start feather message trace for IPI trace logs
+ftcat /dev/litmus/ft_msg_trace0 SEND_RESCHED_START SEND_RESCHED_END > ${ST_MSG_TRACE_NAME}-0.bin &
+ftcat /dev/litmus/ft_msg_trace1 SEND_RESCHED_START SEND_RESCHED_END > ${ST_MSG_TRACE_NAME}-1.bin &
+ftcat /dev/litmus/ft_msg_trace2 SEND_RESCHED_START SEND_RESCHED_END > ${ST_MSG_TRACE_NAME}-2.bin &
+ftcat /dev/litmus/ft_msg_trace3 SEND_RESCHED_START SEND_RESCHED_END > ${ST_MSG_TRACE_NAME}-3.bin &
 
 # now at liblitmus folder
 # Run one test case
