@@ -277,64 +277,22 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
 	}
 }
 
-//static int job(int wss, int shuffle, double exec_time, double program_end)
-//{
-//	char filepath[BS], buf[BS];
-//	FILE *f = NULL;
-//	int n = 0;
-//
-//	if (wctime() > program_end)
-//		return 0;
-//	else {
-//		register unsigned int iter = 0;
-//        	struct timespec start, finish;
-//
-//                clock_gettime(CLOCK_REALTIME, &start);
-// 
-//		while(iter++ < loops) {
-//			// read cpu
-//			cpu = sched_getcpu();
-//			//get the path of the file
-//			n = snprintf(filepath, BS-1, "/proc/sys/litmus/C%d_LA_way", cpu);
-//			filepath[n] = 0;
-//			//open the file
-//			f = fopen(filepath, "r");
-//			if(!f)
-//				die("fopen");
-//			//print its contents
-//			if(!fgets(buf, BS-1, f))
-//			{
-//				printf("read /proc/sys/litmus/C%d_LA_way nothing\n", cpu);
-//			}
-//			cp_cur = atoi(buf);
-//			if (cp_cur != cp_prev)
-//			{
-//				clock_gettime(CLOCK_REALTIME, &cur_time);
-//				if (last_time.tv_sec != 0)
-//				{
-//					dur_tmp = (cur_time.tv_sec - last_time.tv_sec) * 1000000 
-//						+ (cur_time.tv_nsec - last_time.tv_nsec) * 1.0 / 1000;
-//				}
-//				dur_tmp = (cur_time.tv_sec - start.tv_sec) * 1000000 
-//					+ (cur_time.tv_nsec - start.tv_nsec) * 1.0 / 1000;
-//				last_time = cur_time;
-//				printf("pid=%d job_no=%d cpu_prev=%d cpu_cur=%d cp_prev=0x%x cp_cur=0x%x dur=%.3fus dur_start=%.3fus\n",
-//					my_pid, job_no, cpu_prev, cpu, cp_prev, cp_cur, dur_tmp, dur_tmp2);
-//				cp_prev = cp_cur;
-//				cpu_prev = cpu;
-//			}
-//			fclose(f);
-//			loop_once(wss, shuffle);
-//		}
-//
-//                clock_gettime(CLOCK_REALTIME, &finish);
-//                printf("[WCET] pid=%d job_no=%d %ld %ld %.3fus\n",my_pid, job_no, finish.tv_sec - start.tv_sec, finish.tv_nsec - start.tv_nsec,
-//                    (finish.tv_sec - start.tv_sec) * 1.0 * (ONE_SEC/1000) + (finish.tv_nsec - start.tv_nsec) * 1.0 / 1000);
-//
-//		sleep_next_period();
-//		return 1;
-//	}
-//}
+static void initialize(size_t arena_size, int shuffle) {
+       	struct timespec start, finish;
+
+        clock_gettime(CLOCK_REALTIME, &start);
+ 
+	arena = allocate_arena(arena_size, 0, 0);
+	init_arena(arena, arena_size, shuffle);
+	
+        clock_gettime(CLOCK_REALTIME, &finish);
+        printf("init: %ld %ld %ld\n", finish.tv_sec - start.tv_sec, 
+		finish.tv_nsec - start.tv_nsec,
+        	(finish.tv_sec - start.tv_sec)*ONE_SEC + 
+		(finish.tv_nsec - start.tv_nsec));
+
+	sleep_next_period();
+}
 
 #define OPTSTR "p:c:C:weq:r:l:S:U:"
 int main(int argc, char** argv)
@@ -354,9 +312,9 @@ int main(int argc, char** argv)
 	task_class_t class = RT_CLASS_HARD;
 	struct rt_task param, param_tmp;
 
-	size_t arena_size = 0;
-	int wss = 512;
+	int wss = 0;
 	int shuffle = 1;
+	size_t arena_size;
 	int size_kb = -1;
 	job_no = 0;
 
@@ -445,17 +403,12 @@ int main(int argc, char** argv)
 	}
 
 	//set up wss based on num_cache_partitions
-	//wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 1) +
-	//	KB_IN_CACHE_PARTITION / 64;
 	if (size_kb == -1)
 		wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 2);
 	else
 		wss = size_kb;
 	printf("wss=%dKB\n", wss);
-
-	//arena_size = wss * 1024;
-	//arena = allocate_arena(arena_size, 0, 0);
-	//init_arena(arena, arena_size, shuffle);
+	arena_size = wss * 1024;
 
 	init_rt_task_param(&param);
 	param.exec_cost = wcet;
@@ -492,16 +445,7 @@ int main(int argc, char** argv)
 			bail_out("wait_for_ts_release()");
 	}
 
-	//sleep(5);
-	job_no = 1;
-	arena_size = wss * 1024;
-	arena = allocate_arena(arena_size, 0, 0);
-	sleep_next_period();
-	job_no++;
-	init_arena(arena, arena_size, shuffle);
-	//mlockall(MCL_CURRENT | MCL_FUTURE);
-	sleep_next_period();
-	job_no++;
+	initialize(arena_size, shuffle);
 
 	my_pid = getpid();
 	start = wctime();

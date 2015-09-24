@@ -189,6 +189,15 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
 	}
 }
 
+static void initialize(size_t arena_size, int shuffle)
+{
+
+	arena = allocate_arena(arena_size, 0, 0);
+	init_arena(arena, arena_size, shuffle);
+
+	sleep_next_period();
+}
+
 #define OPTSTR "p:c:C:weq:r:l:S:"
 int main(int argc, char** argv)
 {
@@ -295,9 +304,7 @@ int main(int argc, char** argv)
 	//wss = KB_IN_CACHE_PARTITION * (num_cache_partitions - 1) +
 	//	KB_IN_CACHE_PARTITION / 2;
 
-	//arena_size = WSS * 1024;
-	//arena = allocate_arena(arena_size, 0, 0);
-	//init_arena(arena, arena_size, shuffle);
+	arena_size = WSS * 1024;
 
 	init_rt_task_param(&param);
 	param.exec_cost = wcet;
@@ -340,13 +347,7 @@ int main(int argc, char** argv)
 			bail_out("wait_for_ts_release()");
 	}
 
-	//sleep(5);
-	arena_size = WSS * 1024;
-	arena = allocate_arena(arena_size, 0, 0);
-	sleep_next_period();
-	init_arena(arena, arena_size, shuffle);
-	//mlockall(MCL_CURRENT | MCL_FUTURE);
-	sleep_next_period();
+	initialize(arena_size, shuffle);
 
 	start = wctime();
 

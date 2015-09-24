@@ -7,12 +7,18 @@ DURATION=30
 #TASKSET=name
 TASKSET=idle
 
+<<<<<<< HEAD
 #taskset, name, cpu, cachepartition, wcet(ms), period(ms), random(1)/sequential(0), loop, priority
 #idle,ca_spin,0,8,20,50,1,100,1
 idle,ca_spin,0,8,400,1000,1,100,1
+=======
+#taskset, name, cpu, cachepartition, wcet(ms), period(ms), random(1)/sequential(0), loop, priority, wss
+#idle,ca_spin,0,8,20,50,1,100,1,4
+idle,ca_spin,8,16,400,1000,1,100,1,4
+>>>>>>> d27eb3a04f5ce1bdb03128ef316510e377171e00
 
 TASKSET=loaded
-#loaded,rtspin,1,1,1000,1000,0,1000,15
-loaded,ca_thrash,1,8,900,1000,0,1000,15
-loaded,ca_spin,0,8,400,1000,1,100,1
+#loaded,rtspin,1,1,1000,1000,0,1000,15,4
+loaded,ca_thrash,1,8,900,1000,0,1000,15,4
+loaded,ca_spin,0,8,400,1000,1,100,1,4
 
