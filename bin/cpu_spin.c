@@ -37,7 +37,6 @@ static char* progname;
 static pid_t my_pid;
 static int job_no;
 static int NUM_CP;
-int use_cpu_loop = 1;
 //////////////////////////////////////////
 
 #define KB_IN_CACHE_PARTITION	64
@@ -143,51 +142,17 @@ static void init_arena(cacheline_t* arena, size_t size, int shuffle) {
 	}
 }
 
-static cacheline_t* cacheline_start(int wss, int shuffle) {
-	return arena + (shuffle * randrange(0, ((wss * 1024) / sizeof(cacheline_t))));
-}
-
-static int cacheline_walk(cacheline_t *mem, int wss) {
-	int sum, i, next;
-
-	int numlines = wss * CACHELINES_IN_1KB;
-
-	sum = 0;
-
-	next = mem - arena;
-
-	for (i = 0; i < numlines; i++) {
-		next = arena[next].line[0];
-		sum += next;
-	}
-
-	return sum;
-}
-
-static int loop_cpu_once(int wcet) {
-	double sum;
-	int i, j;
-
-	for (j = 0; j < wcet; j++)
-	{
-		/* 1us */
-		for (i = 0; i < 130; i++)
-		{
-			sum += i*i;
-			sum -= (i - 1) * (i + 1);
-		}
-	}
-
-	return 0;
-}
-
-static int loop_once(int wss, int shuffle) {
-	cacheline_t *mem;
-	int temp;
+static double loop_once(int wss, int shuffle) {
+	double temp;
+	int i = 0;
 	
-	mem = cacheline_start(wss, shuffle);
-	temp = cacheline_walk(mem, wss);
-
+	for(i = 0; i < wss; i++)
+	{
+		if ( i % 2 == 0 )
+			temp += i * i;
+		else
+			temp -= i * i;
+	}
 	return temp; 
 }
 
@@ -262,9 +227,6 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
  
 		while(iter++ < loops) {
 			check_cp_setting(start);
-			/* each cp takes 100us if cache hit */
-			if (use_cpu_loop)
-				loop_cpu_once(100 * NUM_CP);
 			loop_once(wss, shuffle);
 		}
 
@@ -277,66 +239,7 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
 	}
 }
 
-//static int job(int wss, int shuffle, double exec_time, double program_end)
-//{
-//	char filepath[BS], buf[BS];
-//	FILE *f = NULL;
-//	int n = 0;
-//
-//	if (wctime() > program_end)
-//		return 0;
-//	else {
-//		register unsigned int iter = 0;
-//        	struct timespec start, finish;
-//
-//                clock_gettime(CLOCK_REALTIME, &start);
-// 
-//		while(iter++ < loops) {
-//			// read cpu
-//			cpu = sched_getcpu();
-//			//get the path of the file
-//			n = snprintf(filepath, BS-1, "/proc/sys/litmus/C%d_LA_way", cpu);
-//			filepath[n] = 0;
-//			//open the file
-//			f = fopen(filepath, "r");
-//			if(!f)
-//				die("fopen");
-//			//print its contents
-//			if(!fgets(buf, BS-1, f))
-//			{
-//				printf("read /proc/sys/litmus/C%d_LA_way nothing\n", cpu);
-//			}
-//			cp_cur = atoi(buf);
-//			if (cp_cur != cp_prev)
-//			{
-//				clock_gettime(CLOCK_REALTIME, &cur_time);
-//				if (last_time.tv_sec != 0)
-//				{
-//					dur_tmp = (cur_time.tv_sec - last_time.tv_sec) * 1000000 
-//						+ (cur_time.tv_nsec - last_time.tv_nsec) * 1.0 / 1000;
-//				}
-//				dur_tmp = (cur_time.tv_sec - start.tv_sec) * 1000000 
-//					+ (cur_time.tv_nsec - start.tv_nsec) * 1.0 / 1000;
-//				last_time = cur_time;
-//				printf("pid=%d job_no=%d cpu_prev=%d cpu_cur=%d cp_prev=0x%x cp_cur=0x%x dur=%.3fus dur_start=%.3fus\n",
-//					my_pid, job_no, cpu_prev, cpu, cp_prev, cp_cur, dur_tmp, dur_tmp2);
-//				cp_prev = cp_cur;
-//				cpu_prev = cpu;
-//			}
-//			fclose(f);
-//			loop_once(wss, shuffle);
-//		}
-//
-//                clock_gettime(CLOCK_REALTIME, &finish);
-//                printf("[WCET] pid=%d job_no=%d %ld %ld %.3fus\n",my_pid, job_no, finish.tv_sec - start.tv_sec, finish.tv_nsec - start.tv_nsec,
-//                    (finish.tv_sec - start.tv_sec) * 1.0 * (ONE_SEC/1000) + (finish.tv_nsec - start.tv_nsec) * 1.0 / 1000);
-//
-//		sleep_next_period();
-//		return 1;
-//	}
-//}
-
-#define OPTSTR "p:c:C:weq:r:l:S:U:"
+#define OPTSTR "p:c:C:weq:r:l:S:"
 int main(int argc, char** argv)
 {
 	int ret;
@@ -389,9 +292,6 @@ int main(int argc, char** argv)
 			break;
 		case 'S':
 			size_kb = atoi(optarg);
-			break;
-		case 'U':
-			use_cpu_loop = atoi(optarg);
 			break;
 		case 'e':
 			want_enforcement = 1;

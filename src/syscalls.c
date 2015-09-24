@@ -27,6 +27,16 @@ int get_rt_task_param(pid_t pid, struct rt_task *param)
 	return syscall(__NR_get_rt_task_param, pid, param);
 }
 
+int get_rt_job_param(pid_t pid, struct rt_job *param)
+{
+	return syscall(__NR_get_rt_job_param, pid, param);
+}
+
+int mark_event(pid_t pid, int event_id, int data)
+{
+	return syscall(__NR_mark_event, pid, event_id, data);
+}
+
 int sleep_next_period(void)
 {
 	return syscall(__NR_complete_job);

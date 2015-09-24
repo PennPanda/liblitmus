@@ -189,7 +189,7 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
 	}
 }
 
-#define OPTSTR "p:c:C:weq:r:l:"
+#define OPTSTR "p:c:C:weq:r:l:S:"
 int main(int argc, char** argv)
 {
 	int ret;
@@ -237,10 +237,14 @@ int main(int argc, char** argv)
 			if ( num_cache_partitions < 0 || num_cache_partitions > MAX_CACHE_PARTITIONS)
 				usage("Invalid partition number. Must be [0,16]");
 			break;
+		case 'S':
+			wss = atoi(optarg);
+			break;
 		case 'e':
 			want_enforcement = 1;
 			break;
 		case 'r':
+			shuffle = atoi(optarg);
 			break;
 		case 'l':
 			loops = atoi(optarg);
@@ -336,12 +340,13 @@ int main(int argc, char** argv)
 			bail_out("wait_for_ts_release()");
 	}
 
-	sleep(5);
+	//sleep(5);
 	arena_size = WSS * 1024;
 	arena = allocate_arena(arena_size, 0, 0);
+	sleep_next_period();
 	init_arena(arena, arena_size, shuffle);
-
-	mlockall(MCL_CURRENT | MCL_FUTURE);
+	//mlockall(MCL_CURRENT | MCL_FUTURE);
+	sleep_next_period();
 
 	start = wctime();
 

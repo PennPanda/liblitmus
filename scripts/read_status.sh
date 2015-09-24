@@ -10,7 +10,7 @@ has_remain_task() {
 	while read first second third fourth fifth nonimportant
 	do
 		LINENUM=$(( ${LINENUM}+1 ));
-		echo "LINENUM=${LINENUM}"
+		#echo "LINENUM=${LINENUM}"
 		if [[ ${LINENUM} -eq 1 ]];then
 			NUM_READY_TASK=${fourth};
 		fi
@@ -19,7 +19,7 @@ has_remain_task() {
 		fi
 	done < ${FILE}
 
-	echo "NUM_READY_TASK=${NUM_READY_TASK} NUM_RELEASE_TASK=${NUM_RELEASE_TASK}"
+	#echo "NUM_READY_TASK=${NUM_READY_TASK} NUM_RELEASE_TASK=${NUM_RELEASE_TASK}"
 	if [[ ${NUM_READY_TASK} -eq 0 && ${NUM_RELEASE_TASK} -eq 0 ]];then
 		return 0;
 	else

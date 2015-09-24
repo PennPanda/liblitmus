@@ -68,6 +68,10 @@ int set_rt_task_param(pid_t pid, struct rt_task* param);
  */
 int get_rt_task_param(pid_t pid, struct rt_task* param);
 
+/* Debug helper */
+int get_rt_job_param(pid_t pid, struct rt_job* param);
+int mark_event(pid_t pid, int event_id, int data);
+
 /**
  * Convert a partition number to a CPU identifier
  * @param partition Partition number
