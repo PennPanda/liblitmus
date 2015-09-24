@@ -85,7 +85,8 @@ def main(task_file):
 
 	result_file = open(batch_name + '.csv', 'w')
 
-	result_file.write("Scheduler,\ttaskset,\twcet,\tavg,\tunsafe\n")
+	result_file.write("%15s, %12s, %12s, %12s, %12s, %12s\n" % \
+		('Scheduler', 'taskset', 'cet-avg', 'cet-min', 'cet-max', 'dl-miss'))
 
 	schedulers, tasksets = parse_task_file(task_file)
 
@@ -168,39 +169,32 @@ def main(task_file):
 			subprocess.Popen("killall -9 cat", shell=True, stdout=None);
 			debug_file.close()
 
-			out_filename = "{}-all.out" \
-				.format(trace_prefix)
+			out_filename = "{}.out".format(trace_prefix)
 
 			outfile = open(out_filename, 'w')
 
-			for cpu in xrange(0,cpus):
-				trace_filename = "st-{}-{}.bin" \
-					.format(trace_prefix, cpu)
+			job_stats_args = 'st_job_stats -p {} st-{}-*.bin' \
+				.format(target_pid, trace_prefix)
 
-				ut_arg = "unit-trace -c -o {}" \
-					.format(trace_filename)
-				ut = subprocess.Popen(ut_arg, shell=True, stdout=outfile)
-				ut.wait()
-				outfile.write("\n")
+			job_stats = subprocess.Popen(job_stats_args, shell=True, stdout=outfile)
+			job_stats.wait()
 
 			outfile.close()
-
 			
-			calc_arg = './calc.py {} {} {}' \
-				.format(wcet, target_pid, out_filename)
+			calc_arg = './calc2.py {}'.format(out_filename)
 			calc = subprocess.Popen(calc_arg.split(), stdout=subprocess.PIPE, stderr=None)
 			output, err = calc.communicate()
-			" ".join(output.split())
+
 			output = output.strip()
 
 			print output
 
-			token = output.split()
+			token = output.split(',')
 
-			result_file.write("%15s, %10s, %12d, %12d, %10d\n" % \
+			result_file.write("%15s, %12s, %12d, %12d, %12d, %12d\n" % \
 				(scheduler, taskset, 
-				int(token[3]), int(token[5]), 
-				int(token[7]))) 
+				int(token[0]), int(token[1]), 
+				int(token[2]), int(token[3]))) 
 
 			time.sleep(1)
 
