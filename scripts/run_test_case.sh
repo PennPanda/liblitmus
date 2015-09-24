@@ -3,6 +3,9 @@
 source read_status.sh
 source test_case_list.sh
 
+# system crash due to lack of memory when we enable IPI trace with st_trace
+FLAG_TRACE_IPI=0
+
 CASE=$1
 DUR=$2
 OPT_WAIT=$3
@@ -70,10 +73,12 @@ echo "Now start test case ${CASE}"
 st_trace -s ${ST_TRACE_NAME} &
 
 # start feather message trace for IPI trace logs
+if [[ ${FLAG_TRACE_IPI} == "1" ]]; then
 ftcat /dev/litmus/ft_msg_trace0 SEND_RESCHED_START SEND_RESCHED_END > ${ST_MSG_TRACE_NAME}-0.bin &
 ftcat /dev/litmus/ft_msg_trace1 SEND_RESCHED_START SEND_RESCHED_END > ${ST_MSG_TRACE_NAME}-1.bin &
 ftcat /dev/litmus/ft_msg_trace2 SEND_RESCHED_START SEND_RESCHED_END > ${ST_MSG_TRACE_NAME}-2.bin &
 ftcat /dev/litmus/ft_msg_trace3 SEND_RESCHED_START SEND_RESCHED_END > ${ST_MSG_TRACE_NAME}-3.bin &
+fi
 
 # now at liblitmus folder
 # Run one test case
