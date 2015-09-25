@@ -27,6 +27,9 @@ ca_spin
 ca_thrash
 rtspin_cache
 uncache
+cpu_spin
+flush_cache
+decode
 
 # build system files
 .config
@@ -43,3 +46,4 @@ arch/*/include/uapi
 *.out
 *.csv
 debug*
+result*.txt

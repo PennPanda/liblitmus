@@ -96,3 +96,9 @@ int null_call(cycles_t *timestamp)
 {
 	return syscall(__NR_null_call, timestamp);
 }
+
+int flush_cache_ways(unsigned int ways, unsigned int *cycles)
+{
+	return syscall(__NR_flush_cache_ways, ways, cycles);
+}
+

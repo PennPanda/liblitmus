@@ -420,6 +420,8 @@ int null_call(cycles_t *timestamp);
  */
 struct control_page* get_ctrl_page(void);
 
+int flush_cache_ways(unsigned int ways, unsigned int *cycles);
+
 #ifdef __cplusplus
 }
 #endif
