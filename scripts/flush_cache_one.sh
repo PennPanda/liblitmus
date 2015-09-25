@@ -21,12 +21,12 @@ if [ -z "$WSS" ]; then
 WSS=$(expr $CP \* 64)
 fi
 
-if [ -z "$SPARSE" ]; then
-SPARSE=0
-SPARSE_OPT=
-else
+if [ "$SPARSE" == "1" ]; then
 SPARSE=1
 SPARSE_OPT="-s"
+else
+SPARSE=0
+SPARSE_OPT=
 fi
 
 echo 0 > /proc/sys/litmus/l1_prefetch
