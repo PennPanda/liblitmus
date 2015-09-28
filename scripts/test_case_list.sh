@@ -114,16 +114,31 @@ fi
 
 # performance test: deadline miss
 if [[ ${CASE} == 201 ]]; then
-	./ca_spin ${WAIT} -q 1 -C 4 -S 224 -l 10 -r 1 -U 0 6 10 ${DUR} &
-	#./ca_spin ${WAIT} -q 2 -C 4 -S 224 -l 100 -r 1 -U 0 58 70 ${DUR} &
-	#./ca_spin ${WAIT} -q 3 -C 4 -S 224 -l 100 -r 1 -U 0 58 70 ${DUR} &
-	./ca_spin ${WAIT} -q 4 -C 16 -S 992 -l 10 -r 1 -U 0 30 200 ${DUR} &
-	#./ca_thrash ${WAIT} -q 511 -C 1 -l 1000 -r 0 900 1000 ${DUR} &
+	#./ca_spin ${WAIT} -q 4 -C 16 -S 992 -l 10 -r 1 -U 0 30 100 ${DUR} &
+	#./ca_spin ${WAIT} -q 1 -C 4 -S 216 -l 10 -r 1 -U 0 58 70 ${DUR} &
+	./ca_spin ${WAIT} -q 1 -C 4 -S 216 -l 20 -r 1 -U 0 -f 1 58 70 ${DUR} &
 fi
 
 if [[ ${CASE} == 202 ]]; then
-	#./ca_spin ${WAIT} -q 4 -C 16 -S 992 -l 10 -r 1 -U 0 30 100 ${DUR} &
-	./ca_spin ${WAIT} -q 1 -C 4 -S 224 -l 10 -r 1 -U 0 58 70 ${DUR} &
+	./ca_spin ${WAIT} -q 1 -C 4 -S 216 -l 10 -r 1 -U 0 6 30 ${DUR} &
+	#./ca_spin ${WAIT} -q 2 -C 4 -S 224 -l 100 -r 1 -U 0 58 70 ${DUR} &
+	#./ca_spin ${WAIT} -q 3 -C 4 -S 224 -l 100 -r 1 -U 0 58 70 ${DUR} &
+	./ca_spin ${WAIT} -q 4 -C 16 -S 962 -l 10 -r 1 -U 0 30 300 ${DUR} &
+	#./ca_thrash ${WAIT} -q 511 -C 1 -l 1000 -r 0 900 1000 ${DUR} &
+fi
+# compare gFPca gFPcanw nongFPca
+if [[ ${CASE} == 203 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 4 -S 216 -l 10 -r 1 -U 0 6 30 ${DUR} &
+	./ca_spin ${WAIT} -q 2 -C 4 -S 216 -l 20 -r 1 -U 0 12 30 ${DUR} &
+	./ca_spin ${WAIT} -q 4 -C 16 -S 962 -l 10 -r 1 -U 0 30 300 ${DUR} &
+	./ca_spin ${WAIT} -q 10 -C 4 -S 216 -l 10 -r 1 -U 0 6 30 ${DUR} &
+	#./ca_thrash ${WAIT} -q 511 -C 1 -l 1000 -r 0 900 1000 ${DUR} &
+fi
+if [[ ${CASE} == 204 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 4 -S 216 -l 10 -r 1 -U 0 -e 6 91 ${DUR} &
+	./ca_spin ${WAIT} -q 4 -C 16 -S 962 -l 10 -r 1 -U 0 -e 30 500 ${DUR} &
+	./ca_spin ${WAIT} -q 10 -C 4 -S 216 -l 10 -r 1 -U 0 -e 6 100 ${DUR} &
+	#./ca_thrash ${WAIT} -q 511 -C 1 -l 1000 -r 0 900 1000 ${DUR} &
 fi
 # functionality test
 if [[ ${CASE} == 1 ]]; then

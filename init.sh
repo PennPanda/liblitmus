@@ -20,7 +20,7 @@ fi
 if [[ "${SCHEDULER}" == "GSN-FPCANW" ]]; then
 	CACHE_INIT=0x0
 fi
-if [[ "${SCHEDULER}" == "GSN-NONFPCA" ]]; then
+if [[ "${SCHEDULER}" == "GSN-NPFPCA" ]]; then
 	CACHE_INIT=0x0
 fi
 

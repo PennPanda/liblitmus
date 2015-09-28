@@ -5,6 +5,8 @@ source test_case_list.sh
 
 # system crash due to lack of memory when we enable IPI trace with st_trace
 FLAG_TRACE_IPI=0
+FLAG_FTCAT_FIFO=0
+ST_TRACE_PATH=/dev/shm
 
 CASE=$1
 DUR=$2
@@ -70,7 +72,13 @@ showsched
 sudo cat /dev/litmus/log > ${LOG} &
 echo "Now start test case ${CASE}"
 # start feather trace
-st_trace -s ${ST_TRACE_NAME} &
+./scripts/st_trace -s ${ST_TRACE_NAME} ${ST_TRACE_PATH} & 
+sleep 2
+if [[ ${FLAG_FTCAT_FIFO} == "1" ]];then
+	echo "set ftcat to highest priority in FIFO scheduler"
+	./scripts/set_fifo.sh ftcat
+	sleep 1
+fi
 
 # start feather message trace for IPI trace logs
 if [[ ${FLAG_TRACE_IPI} == "1" ]]; then
@@ -95,16 +103,34 @@ check_system_idle
 if [[ "${i}" == "${MAX_CHECK_STATUS}" ]]; then
 	echo "[ATTENTION] Has task remaining in system after experiment!"
 	echo "Force all RT tasks exit..."
+	echo "killall -9 rtspin"
 	killall -9 rtspin
 	check_system_idle
 fi
 
-# move st_trace .bin to trace_bin folder
-mv *${ST_TRACE_NAME}*.bin trace_bin
-
+sleep 5
 #killall cat
 killall st_trace
 killall ftcat
 killall cat
-echo "[DONE] test=${CASE} dur=${DUR} log=${LOG}"
+sleep 1
+
+for((i=0; i<10; i+=1));do
+	FTCAT_NUM=$(ps -ef | grep "ftcat" | grep -v "grep" | wc -l)
+	if [[ "${FTCAT_NUM}" != "0" ]]; then
+		sleep $i;
+		echo "Wait ftcat being killed"
+	fi
+done
+
+# move st_trace .bin to trace_bin folder
+mv ${ST_TRACE_PATH}/*${ST_TRACE_NAME}*.bin ./trace_bin/
+
+echo "[Experiment DONE] test=${CASE} dur=${DUR} log=${LOG}"
+echo "---------------------------------"
+echo "start parsing data"
+cd scripts
+./parse_bin.sh ${ST_TRACE_NAME}
+./find_ddl_miss.sh ${ST_TRACE_NAME}
+echo "[Data Analysis DONE] test=${CASE} dur=${DUR} log=${LOG} trace=${ST_TRACE_NAME}"
 echo "---------------------------------"

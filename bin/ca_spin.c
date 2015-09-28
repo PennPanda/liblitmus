@@ -23,7 +23,7 @@ static void usage(char *error) {
 	fprintf(stderr, "Error: %s\n", error);
 	fprintf(stderr,
 		"Usage:\n"
-		"	ac_spin [COMMON-OPTS] WCET PERIOD DURATION\n"
+		"	ca_spin [COMMON-OPTS] WCET PERIOD DURATION\n"
 		"\n"
 		"COMMON-OPTS = [-w] [-r 0/1] \n"
 		"              [-p PARTITION/CLUSTER ] [-c CLASS]\n"
@@ -38,6 +38,7 @@ static pid_t my_pid;
 static int job_no;
 static int NUM_CP;
 int use_cpu_loop = 1;
+int flag_printf = 0;
 //////////////////////////////////////////
 
 #define KB_IN_CACHE_PARTITION	64
@@ -223,8 +224,9 @@ void check_cp_setting(struct timespec start)
 	cp_cur = job_params.cache_partitions;
 	if (cp_cur != cp_prev)
 	{
-		printf("pid=%d job_no=%d cpu_prev=%d cpu_cur=%d cp_prev=0x%x cp_cur=0x%x dur_invalidt=%.3fus\n",
-			my_pid, job_no, cpu_prev, cpu, cp_prev, cp_cur, dur_tmp);
+		if (flag_printf == 1)
+			printf("pid=%d job_no=%d cpu_prev=%d cpu_cur=%d cp_prev=0x%x cp_cur=0x%x dur_invalidt=%.3fus\n",
+				my_pid, job_no, cpu_prev, cpu, cp_prev, cp_cur, dur_tmp);
 		cp_prev = cp_cur;
 	}
 	if (count_bits(job_params.cache_partitions) != NUM_CP)
@@ -269,8 +271,9 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
 		}
 
                 clock_gettime(CLOCK_REALTIME, &finish);
-                printf("[WCET] pid=%d job_no=%d %ld %ld %.3fus\n",my_pid, job_no, finish.tv_sec - start.tv_sec, finish.tv_nsec - start.tv_nsec,
-                    (finish.tv_sec - start.tv_sec) * 1.0 * (ONE_SEC/1000) + (finish.tv_nsec - start.tv_nsec) * 1.0 / 1000);
+		if (flag_printf == 1)
+                	printf("[WCET] pid=%d job_no=%d %ld %ld %.3fus\n",my_pid, job_no, finish.tv_sec - start.tv_sec, finish.tv_nsec - start.tv_nsec,
+                    		(finish.tv_sec - start.tv_sec) * 1.0 * (ONE_SEC/1000) + (finish.tv_nsec - start.tv_nsec) * 1.0 / 1000);
 
 		sleep_next_period();
 		return 1;
@@ -294,7 +297,7 @@ static void initialize(size_t arena_size, int shuffle) {
 	sleep_next_period();
 }
 
-#define OPTSTR "p:c:C:weq:r:l:S:U:"
+#define OPTSTR "p:c:C:weq:r:l:S:U:f:"
 int main(int argc, char** argv)
 {
 	int ret;
@@ -350,6 +353,9 @@ int main(int argc, char** argv)
 			break;
 		case 'U':
 			use_cpu_loop = atoi(optarg);
+			break;
+		case 'f':
+			flag_printf = atoi(optarg);
 			break;
 		case 'e':
 			want_enforcement = 1;
