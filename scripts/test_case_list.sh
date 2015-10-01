@@ -140,6 +140,11 @@ if [[ ${CASE} == 204 ]]; then
 	./ca_spin ${WAIT} -q 10 -C 4 -S 216 -l 10 -r 1 -U 0 -e 6 100 ${DUR} &
 	#./ca_thrash ${WAIT} -q 511 -C 1 -l 1000 -r 0 900 1000 ${DUR} &
 fi
+if [[ ${CASE} == 205 ]]; then
+	#./ca_spin ${WAIT} -q 4 -C 16 -S 992 -l 10 -r 1 -U 0 30 100 ${DUR} &
+	#./ca_spin ${WAIT} -q 1 -C 4 -S 216 -l 10 -r 1 -U 0 58 70 ${DUR} &
+	./ca_spin ${WAIT} -q 1 -C 10 -S 640 -l 10 -r 1 -U 0 -f 1 200 200 ${DUR} &
+fi
 # functionality test
 if [[ ${CASE} == 1 ]]; then
 	./rtspin 100 200 $DUR -q 2 -C 0 &
