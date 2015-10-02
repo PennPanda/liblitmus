@@ -352,7 +352,7 @@ int main(int argc, char** argv)
 	ret = get_rt_task_param(gettid(), &param_tmp);
 	if (ret < 0)
 		bail_out("could not get rt task params");
-	printf("MX: num_cache_partitions=%d\n", param_tmp.num_cache_partitions);
+	//printf("MX: num_cache_partitions=%d\n", param_tmp.num_cache_partitions);
 
 	ret = init_litmus();
 	if (ret < 0)

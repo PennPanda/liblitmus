@@ -2,7 +2,8 @@
 # run on desktop to walk around the memory leak issue in ftcat
 
 ROOT=/home/ubuntu/mengxu/liblitmus/scripts
-RTTASK=ca_spin
+#Three types of workload: rtspin (cpu), ca_spin (cache read), ca_spinwrite (cache write)
+RTTASK=rtspin
 declare -a Algs=( "GSN-FPCA2" "GSN-EDF" "GSN-NPFPCA" "GSN-FPCANW" "GSN-FP" )
 declare -a TYPES=( "Uniform_Light" "Uniform_Medium" "Uniform_Heavy" )
 num_tasks_min=50
@@ -30,11 +31,11 @@ do
 				fi
 			done
 			echo "./run_overhead_measurement.sh ${case} 30 0 ${alg} ${type} ${num_tasks} ${RTTASK}"
-			ssh root@board1 "source /home/ubuntu/.bashrc; source /root/.bashrc; cd ${ROOT}; ./run_overhead_measurement.sh ${case} 30 0 ${alg} ${type} ${num_tasks}"
+			ssh root@board1 "${ROOT}/move_result.sh"
+			ssh root@board1 "source /home/ubuntu/.bashrc; source /root/.bashrc; cd ${ROOT}; ./run_overhead_measurement.sh ${case} 30 0 ${alg} ${type} ${num_tasks} ${RTTASK}"
 			ssh root@board1 "reboot"
 			sleep 6
 		done
-		ssh root@board1 "${ROOT}/move_result.sh"
 		echo "[Done] ${case} ${type} ${alg}"
 	done
 done

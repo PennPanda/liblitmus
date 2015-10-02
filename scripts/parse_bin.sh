@@ -22,6 +22,7 @@ for event in "${EVENTS[@]}"
 do
 	echo "Parse Overhead Event: ${event}"
 	ft2csv ${event} ${TRACE_BIN}/oh-${INPUT}-all.bin > ${TRACE_OH}/oh-${INPUT}-${event}.oh
+	ft2csv ${event} ${TRACE_BIN}/oh-${INPUT}-all.bin &> ${TRACE_OH}/oh-${INPUT}-${event}-all.oh
 	awk '$3>x{x=$3};END{print x}' ${TRACE_OH}/oh-${INPUT}-${event}.oh > ${TRACE_OH}/oh-${INPUT}-${event}-max.oh
 	echo "${event} max:"
 	cat ${TRACE_OH}/oh-${INPUT}-${event}-max.oh

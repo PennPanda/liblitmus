@@ -1,11 +1,11 @@
 #!/bin/bash
-rttask=./$1
-if [[ $1 == "" ]];then
-	rttask=./ca_spin
-fi
 generate_workload(){
 	type=$1
 	num_tasks=$2
+	rttask="./$3"
+	if [[ $3 == "" ]];then
+		rttask=./ca_spin
+	fi
 	if [[ "${type}" == "Uniform_Light" ]];then
 		util_min=1
 		util_max=100
@@ -29,10 +29,14 @@ generate_workload(){
 		rand=`cat /tmp/random`
 		period=${rand}
 		cp=`expr ${rand} % 16`
+		if [[ "${rttask}" == "./rtspin" || "${rttask}" == "rtspin" ]]; then
+			cp=0
+		fi
 		shuf -i ${util_min}-${util_max} -n 1 > ${FILE_RANDOM}
 		rand=`cat /tmp/random`
 		exe=$(( $(( ${period} * ${rand} )) / 1000 ))
-		echo "${rttask} ${exe} ${period} ${DUR} -q ${i} -C ${cp} -S 10 ${WAIT} &"
+		wss=$(( ${cp} * 64 ))
+		echo "${rttask} ${exe} ${period} ${DUR} -q ${i} -C ${cp} -S ${wss} ${WAIT} &"
 		${rttask} ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &
 		util=$(( ${util} +  $(( $(( ${exe} * 100 )) / ${period} )) ))
 	done
