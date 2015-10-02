@@ -14,7 +14,13 @@ echo 0 > /proc/sys/litmus/l2_double_linefill
 if [[ "${SCHEDULER}" == "GSN-FP" ]]; then
 	CACHE_INIT=0xffff
 fi
+if [[ "${SCHEDULER}" == "GSN-EDF" ]]; then
+	CACHE_INIT=0xffff
+fi
 if [[ "${SCHEDULER}" == "GSN-FPCA" ]]; then
+	CACHE_INIT=0x0
+fi
+if [[ "${SCHEDULER}" == "GSN-FPCA2" ]]; then
 	CACHE_INIT=0x0
 fi
 if [[ "${SCHEDULER}" == "GSN-FPCANW" ]]; then

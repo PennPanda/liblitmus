@@ -1,21 +1,24 @@
 #!/bin/bash
 # cat /dev/litmus/log > debug.txt &
 source read_status.sh
-source test_case_list.sh
+source overhead_measurement_list.sh 
 
 # system crash due to lack of memory when we enable IPI trace with st_trace
 FLAG_TRACE_IPI=0
 FLAG_FTCAT_FIFO=1
 FLAG_OH=1
-ST_TRACE_PATH=/dev/shm
+ST_TRACE_PATH=/tmp/
 
 CASE=$1
 DUR=$2
 OPT_WAIT=$3
 SCHED=$4
-LOG=/root/debug_test${CASE}_dur${DUR}_wait${OPT_WAIT}_sched${SCHED}.txt
-ST_TRACE_NAME=trace_test${CASE}_dur${DUR}_wait${OPT_WAIT}_sched${SCHED}
-ST_MSG_TRACE_NAME=trace_msg_test${CASE}_dur${DUR}_wait${OPT_WAIT}_sched${SCHED}
+TYPE=$5
+NUM_TASKS=$6
+RTTASK=$7
+LOG=/root/debug_test${CASE}_dur${DUR}_wait${OPT_WAIT}_sched${SCHED}_type${TYPE}_numtasks${NUM_TASKS}_rt${RTTASK}.txt
+ST_TRACE_NAME=trace_test${CASE}_dur${DUR}_wait${OPT_WAIT}_sched${SCHED}_type${TYPE}_numtasks${NUM_TASKS}_rt${RTTASK}
+ST_MSG_TRACE_NAME=trace_msg_test${CASE}_dur${DUR}_wait${OPT_WAIT}_sched${SCHED}_type${TYPE}_numtasks${NUM_TASKS}_rt${RTTASK}
 LITMUS_STATUS_FILE=/tmp/litmus_status.txt
 FILE_RANDOM=/tmp/random
 TASKNUM=0
@@ -35,7 +38,7 @@ check_system_idle() {
 }
 
 if [[ -z "${CASE}" || -z "${DUR}" || -z "${OPT_WAIT}" || -z "${SCHED}" ]];then
-	echo "[Usage] run_test_case test_case_id duration wait sched"
+	echo "[Usage] run_test_case test_case_id duration wait sched type num_task"
 	exit 1;
 fi
 
@@ -57,6 +60,7 @@ echo "rm log and killall cat and rtspin"
 sudo killall rtspin
 sudo killall ca_spin
 sudo killall ca_thrash
+sudo killall ${RTTASK}
 sudo killall cpu_spin
 sudo killall st_trace
 sudo killall ftcat
@@ -73,18 +77,18 @@ showsched
 sudo cat /dev/litmus/log > ${LOG} &
 echo "Now start test case ${CASE}"
 # start feather trace
-if [[ ${FLAG_OH} != "1" ]]; then
-./scripts/st_trace -s ${ST_TRACE_NAME} ${ST_TRACE_PATH} & 
-sleep 2
-fi
+#if [[ ${FLAG_OH} != "1" ]]; then
+#./scripts/st_trace -s ${ST_TRACE_NAME} ${ST_TRACE_PATH} & 
+#sleep 2
+#fi
 
 if [[ ${FLAG_OH} == "1" ]]; then
-#OH_EVENTS="CXS_START CXS_END SCHED_START SCHED_END SCHED2_START SCHED2_END RELEASE_START RELEASE_END RELEASE_LATENCY"
-OH_EVENTS="CXS_START CXS_END"
-ftcat -v -c /dev/litmus/ft_cpu_trace0 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-0.bin &
-ftcat -v -c /dev/litmus/ft_cpu_trace1 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-1.bin &
-ftcat -v -c /dev/litmus/ft_cpu_trace2 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-2.bin & 
-ftcat -v -c /dev/litmus/ft_cpu_trace3 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-3.bin &
+OH_EVENTS="CXS_START CXS_END SCHED_START SCHED_END SCHED2_START SCHED2_END RELEASE_START RELEASE_END RELEASE_LATENCY"
+#OH_EVENTS="CXS_START CXS_END"
+ftcat -v /dev/litmus/ft_cpu_trace0 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-0.bin &
+ftcat -v /dev/litmus/ft_cpu_trace1 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-1.bin &
+ftcat -v /dev/litmus/ft_cpu_trace2 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-2.bin & 
+ftcat -v /dev/litmus/ft_cpu_trace3 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-3.bin &
 fi
 
 if [[ ${FLAG_FTCAT_FIFO} == "1" ]];then
@@ -93,7 +97,7 @@ if [[ ${FLAG_FTCAT_FIFO} == "1" ]];then
 	sleep 1
 fi
 # start feather message trace for IPI trace logs
-if [[ ${FLAG_TRACE_IPI} == "1" ]]; then
+if [[ "${FLAG_TRACE_IPI}" == "1" ]]; then
 ftcat /dev/litmus/ft_msg_trace0 SEND_RESCHED_START SEND_RESCHED_END > ${ST_MSG_TRACE_NAME}-0.bin &
 ftcat /dev/litmus/ft_msg_trace1 SEND_RESCHED_START SEND_RESCHED_END > ${ST_MSG_TRACE_NAME}-1.bin &
 ftcat /dev/litmus/ft_msg_trace2 SEND_RESCHED_START SEND_RESCHED_END > ${ST_MSG_TRACE_NAME}-2.bin &
@@ -102,13 +106,24 @@ fi
 
 # now at liblitmus folder
 # Run one test case
-test_case ${CASE}
+#overhead_measurement_case ${CASE}
+generate_workload ${TYPE} ${NUM_TASKS} ${RTTASK}
 
 sleep 1
 if [[ "${WAIT}" == "-w" ]]; then
 	./release_ts -f ${TASKNUM} &
 fi
 sleep ${DUR}
+
+killall -9 ca_spin
+killall -9 ca_spin
+killall -9 ca_spin
+killall -9 rtspin
+killall -9 rtspin
+killall -9 rtspin
+killall -9 ${RTTASK}
+killall -9 ${RTTASK}
+killall -9 ${RTTASK}
 
 check_system_idle
 
@@ -120,10 +135,10 @@ if [[ "${i}" == "${MAX_CHECK_STATUS}" ]]; then
 	check_system_idle
 fi
 
-sleep 5
+sleep 3
 #killall cat
 killall st_trace
-killall ftcat
+killall -2 ftcat
 killall cat
 sleep 1
 

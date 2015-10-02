@@ -2,6 +2,43 @@
 
 test_case(){
 #now at liblitmus folder
+if [[ ${CASE} == 2003 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 11 -S 704 -l 42 -r 1 -U 0 -f 0 200 200 ${DUR} &
+fi
+if [[ ${CASE} == 2004 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 11 -S 704 -l 42 -r 0 -U 0 -f 0 200 200 ${DUR} &
+fi
+#Prove we need cache-aware analysis
+# exe = 2
+if [[ ${CASE} == 1001 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 1 -S 64 -l 9 -r 1 -U 0 -f 0 200 200 ${DUR} &
+fi
+
+#exe = 30
+if [[ ${CASE} == 1002 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 3 -S 192 -l 50 -r 1 -U 0 -f 0 200 200 ${DUR} &
+fi
+
+# exe = 75
+if [[ ${CASE} == 1003 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 11 -S 704 -l 42 -r 1 -U 0 -f 0 200 200 ${DUR} &
+fi
+
+#overhead-free analysis is unsafe
+if [[ ${CASE} == 1004 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 1  -S 64 -l 9 -r 1 -U 0 -f 0 2 10 ${DUR} &
+	./ca_spin ${WAIT} -q 2 -C 1  -S 64 -l 9 -r 1 -U 0 -f 0 2 10 ${DUR} &
+	./ca_spin ${WAIT} -q 3 -C 1  -S 64 -l 9 -r 1 -U 0 -f 0 2 10 ${DUR} &
+	./ca_spin ${WAIT} -q 4 -C 3 -S 192 -l 50 -r 1 -U 0 -f 0 30 60 ${DUR} &
+	./ca_spin ${WAIT} -q 5 -C 11 -S 704 -l 41 -r 1 -U 0 -f 0 78 100 ${DUR} &
+fi
+#overhead-aware analysis is safe
+if [[ ${CASE} == 1005 ]]; then
+	./ca_spin ${WAIT} -q 1 -C 1  -S 64 -l 9 -r 1 -U 0 -f 0 2 10 ${DUR} &
+	./ca_spin ${WAIT} -q 2 -C 1  -S 64 -l 9 -r 1 -U 0 -f 0 2 10 ${DUR} &
+	./ca_spin ${WAIT} -q 4 -C 3 -S 192 -l 50 -r 1 -U 0 -f 0 30 60 ${DUR} &
+	./ca_spin ${WAIT} -q 5 -C 11 -S 704 -l 41 -r 1 -U 0 -f 0 78 100 ${DUR} &
+fi
 # performance test: WCET
 if [[ ${CASE} == 98 ]]; then
 	./ca_spin ${WAIT} -q 1 -C 16 -S 384 -l 100 -r 1 400 1000 ${DUR} &

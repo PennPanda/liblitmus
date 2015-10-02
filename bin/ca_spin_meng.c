@@ -49,154 +49,222 @@ int flag_printf = 0;
 #define INTS_IN_1KB (1024 / sizeof(int))
 #define INTS_IN_CACHELINE (CACHELINE_SIZE / sizeof(int))
 
-typedef struct cacheline {
-	int line[INTS_IN_CACHELINE];
-} __attribute__((aligned(CACHELINE_SIZE))) cacheline_t;
-
-static cacheline_t *arena = NULL;
 static int loops = 10;
 
+#define NPAD                7
+struct cache_line {
+    struct cache_line *next;
+    long int pad[NPAD];
+};
+typedef struct cache_line cache_line_t;
+
+
+struct cache_measurement {
+    cache_line_t *head;
+    cache_line_t *cache;
+    long array_size;
+    long num_busy_loop;
+    long num_iterations;
+};
+typedef struct cache_measurement cache_measurement_t;
+
+#define CACHE_LINE_SIZE     64
+#define PAGE_OFFSET_MASK    0x0FFF
+#define PAGE_SIZE  4096
+#define NUM_ELEM_PER_PAGE (PAGE_SIZE / sizeof(cache_line_t))
+
+
+int warm_cache ( cache_line_t *head )
+{
+    cache_line_t *cur = head;
+    int i;
+    long sum = 0;
+
+    /* iterate along linked list */
+    while ( cur->next != NULL )
+    {
+        for ( i = 0; i < NPAD; i++ )
+            sum += cur->next->pad[i];
+        cur = cur->next;
+    }
+
+    return 0;
+}
+
+int sanity_check_access_pattern ( cache_line_t *cache, long array_size, cache_line_t *head )
+{
+    long int i, j;
+    cache_line_t *cur = head;
+    long sum1 = 0, sum2 = 0;
+
+    /* identify each element */
+    for ( i = 0; i < array_size; i++ )
+    {
+        for ( j = 0; j < NPAD; j++ )
+            cache[i].pad[j] = i;
+        sum1 += i;
+    }
+
+    /* iterate along linked list */
+    i = 0;
+    while ( cur->next != NULL )
+    {
+        dbprintf("%ld ", cur->next->pad[0]);
+        sum2 += cur->next->pad[0];
+        cur = cur->next;
+        i++;
+    }
+
+    dbprintf("\r\n");
+    dbprintf("Total num of iterated elemet is %ld; sum of iteration is %ld\n", i, sum2);
+    return 0;
+}
+
+cache_line_t * random_full_each_line_prepare(cache_line_t *cache, long array_size)
+{
+    /** 
+     * Access partern to measure latency of reloading whole array
+     * Access the element randomly in the whole array;
+     * Random does not limit to a single page
+     */
+    int i;
+    cache_line_t *head = (cache_line_t*) malloc( sizeof(cache_line_t) ); /* dummy head */
+    cache_line_t *cur = head;
+    int *index_array = (int *) malloc(array_size * sizeof(int));
+    int index;
+    int tmp;
+
+    if ( head == NULL )
+    {
+        fprintf(stderr, "head is NULL\n");
+        exit(ENOMEM);
+    }
+
+    srand(0); /* In order to repeat the experiment */
+    /* init index array to be 0 - array_size */
+    for ( i = 0; i < array_size; i++ )
+        index_array[i] = i;
+
+    /* shuffle the access sequence in page */
+    for ( i = 0; i < array_size; i++ )
+    {
+        tmp = rand() % array_size; /* rand return 0 to RAND_MAX */
+        assert( tmp < array_size );
+        swap(index_array, i, tmp); 
+    }
+    
+    for ( i = 0; i < array_size; i++ )
+    {
+        index = index_array[i];
+        if ( index >= array_size )
+            continue;
+        cur->next = &cache[index];
+        cur = cur->next;
+    }
+
+    free( index_array );
+    return head;
+}
+
+static inline void * adjust_to_page_align ( void *p )
+{
+    void *p_new = p;
+
+    p_new = p + (0x1000L - ((long) p & PAGE_OFFSET_MASK)); /* allign to page */
+//    printf("malloc %0lx\n", (long) p_new);
+    return p_new;
+}
+
+long measure_each_line_access_pattern ( const cache_measurement_t *measurement )
+{
+    /** 
+     * Access partern to measure latency of reloading whole l2 
+     * first access all first payload by striding page to avoid prefetch
+     * Then access the next payload
+     */
+    int j, k, index;
+    cache_line_t *cur = measurement->head;
+    long sum = 0;
+    long start, finish;
+    long tmp;
+
+    assert( cur != NULL );
+    
+    for ( k = 0; k < measurement->num_iterations; k++ )
+    {
+        /* for each iteration of the whole array */
+        sum = 0;
+        cur = measurement->head;
+
+        while( cur->next != NULL ) /* iterate all cache_line */
+        {
+            sum += cur->next->pad[0]; /* read */
+            cur = cur->next;
+        }
+
+        /* wait for next period */
+//        usleep(measurement->period);
+        j = 0; /* cpu payload for cache interference */
+        while ( j++ < measurement->num_busy_loop )
+                tmp += j * j;
+    }
+
+    return sum;
+}
+
+cache_line_t *cache_origin; /* to free all alloc memory */
+cache_line_t *cache; /* to load data each time to use it */
+cache_measurement_t measurement;
+int random_full_each_line_func( long array_space_B, long num_busy_loop, long num_loops)
+{
+    int ret;
+    long sum;
+    long cache_origin_size;
+    long cache_size;
+    cache_line_t *head;
+
+    memset( (void *) &measurement, 0, sizeof(measurement) );
+    /* input parse */
+    measurement.num_busy_loop = num_busy_loop;
+    measurement.num_iterations = num_loops;
+    measurement.array_size = array_space_B / sizeof(cache_line_t);
+    cache_origin_size = sizeof(cache_line_t) * measurement.array_size + PAGE_SIZE;
+    cache_size = sizeof(cache_line_t) * measurement.array_size;
+
+    dbprintf("num_busy_loop=%ld, num_iteration=%ld\n", 
+            measurement.num_busy_loop, measurement.period, measurement.num_iterations);
+
+    cache_origin = (cache_line_t *) malloc( cache_origin_size );
+    cache = cache_origin;
+    /* allign to page offset */
+    cache = (cache_line_t *) adjust_to_page_align( (void *) cache );
+    if ( cache == NULL )
+    {
+        fprintf(stderr, "alloc cache with size %ld fails\n", array_space_B);
+        return -ENOMEM;
+    }
+    memset( (void *) cache, 0, cache_size);
+
+    head = random_full_each_line_prepare( cache, measurement.array_size );
+    assert( head != NULL );
+    
+    ret = sanity_check_access_pattern( cache, measurement.array_size, head );
+
+    warm_cache( head );
+    warm_cache ( head );
+
+    measurement.cache = cache;
+    measurement.head = head;
+    //sum = measure_each_line_access_pattern( &measurement );
+
+out:
+    //if ( cache_origin != NULL )
+    //    free( cache_origin );
+    sleep_next_period();
+    return ret;
+}
+
 #define UNCACHE_DEV "/dev/litmus/uncache"
-static cacheline_t* allocate_arena(size_t size, int use_huge_pages, int use_uncache_pages) {
-
-	int flags = MAP_PRIVATE | MAP_POPULATE;
-	cacheline_t* arena = NULL;
-	int fd;
-
-	if (use_huge_pages) {
-		flags |= MAP_HUGETLB;
-	}
-
-	if (use_uncache_pages) {
-		fd = open(UNCACHE_DEV, O_RDWR|O_SYNC);
-		if (fd == -1) {
-			bail_out("Failed to open uncache device.");
-		}
-	}
-	else {
-		fd = -1;
-		flags |= MAP_ANONYMOUS;
-	}
-
-	//arena = mmap(0, size, PROT_READ | PROT_WRITE, flags, fd, 0);
-	arena = (cacheline_t*) malloc(size);
-
-	if (use_uncache_pages) {
-		close(fd);
-	}
-
-	assert(arena);
-
-	return arena;
-}
-
-static void dealloc_arena(cacheline_t* mem, size_t size) {
-	//int ret = munmap((void*)mem, size);
-	int ret = 0;
-	
-	if (mem) 
-		free((void*) mem);
-
-	if (ret != 0) {
-		bail_out("munmap() error");
-	}
-}
-
-static int randrange(int min, int max) {
-	int limit = max - min;
-	int divisor = RAND_MAX / limit;
-	int retval;
-
-	do {
-		retval = rand() / divisor;
-	} while(retval == limit);
-
-	retval += min;
-
-	return retval;
-}
-
-static void init_arena(cacheline_t* arena, size_t size, int shuffle) {
-	int i;
-
-	size_t num_arena_elem = size / sizeof(cacheline_t);
-
-	if (shuffle) {
-
-		for (i = 0; i < num_arena_elem; i++) {
-			int j;
-			for(j = 0; j < INTS_IN_CACHELINE; ++j) {
-				arena[i].line[j] = i;
-			}
-		}
-
-		while(1 < i--) {
-			int j = randrange(0, i);
-
-			cacheline_t temp = arena[j];
-			arena[j] = arena[i];
-			arena[i] = temp;
-		}
-	}
-	else {
-		for (i = 0; i < num_arena_elem; i++) {
-			int j;
-			int next = (i + 1) % num_arena_elem;
-			for(j = 0; j < INTS_IN_CACHELINE; ++j) {
-				arena[i].line[j] = next;
-			}
-		}
-	}
-}
-
-static cacheline_t* cacheline_start(int wss, int shuffle) {
-	//return arena + (shuffle * randrange(0, ((wss * 1024) / sizeof(cacheline_t))));
-	return arena;
-}
-
-static int cacheline_walk(cacheline_t *mem, int wss) {
-	int sum, i, next;
-
-	int numlines = wss * CACHELINES_IN_1KB;
-
-	sum = 0;
-
-	next = mem - arena;
-
-	for (i = 0; i < numlines; i++) {
-		next = arena[next].line[0];
-		sum += next;
-	}
-
-	return sum;
-}
-
-static int loop_cpu_once(int wcet) {
-	double sum;
-	int i, j;
-
-	for (j = 0; j < wcet; j++)
-	{
-		/* 1us */
-		for (i = 0; i < 130; i++)
-		{
-			sum += i*i;
-			sum -= (i - 1) * (i + 1);
-		}
-	}
-
-	return 0;
-}
-
-static int loop_once(int wss, int shuffle) {
-	cacheline_t *mem;
-	int temp;
-	
-	mem = cacheline_start(wss, shuffle);
-	temp = cacheline_walk(mem, wss);
-
-	return temp; 
-}
 
 int count_bits(uint16_t cp_mask)
 {
@@ -249,15 +317,16 @@ void check_cp_setting(struct timespec start)
 		invalid_cp_flag = 0;
 		dur_tmp = (cur_time.tv_sec - start.tv_sec) * 1000000 
 			+ (cur_time.tv_nsec - start.tv_nsec) * 1.0 / 1000;
-		printf("pid=%d job_no=%d cpu_prev=%d cpu_cur=%d cp_prev=0x%x cp_cur=0x%x dur_invalidt=%.3fus\n",
-			my_pid, job_no, cpu_prev, cpu, cp_prev, cp_cur, dur_tmp);
+		if (flag_printf == 1)
+			printf("pid=%d job_no=%d cpu_prev=%d cpu_cur=%d cp_prev=0x%x cp_cur=0x%x dur_invalidt=%.3fus\n",
+				my_pid, job_no, cpu_prev, cpu, cp_prev, cp_cur, dur_tmp);
 	}
 }
 //////////////////////////////////////////
 void die(char *x){ perror(x); exit(1); };
 #define ONE_SEC 1000000000L
 #define BS	1024
-static int job(int wss, int shuffle, double exec_time, double program_end)
+static int job(const cache_measurement_t *measurement, double program_end)
 {
 	if (wctime() > program_end)
 		return 0;
@@ -273,34 +342,17 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
 			/* each cp takes 100us if cache hit */
 			if (use_cpu_loop)
 				loop_cpu_once(100 * NUM_CP);
-			loop_once(wss, shuffle);
+			measure_each_line_access_pattern (measurement);
 		}
 
                 clock_gettime(CLOCK_REALTIME, &finish);
 		if (flag_printf == 1)
-                	printf("[WCET] pid=%d job_no=%d %ld %ld %.3fus\n",my_pid, job_no, finish.tv_sec - start.tv_sec, finish.tv_nsec - start.tv_nsec,
+                	printf("[WCET] pid=%d job_no=%d %ld %ld %.3f\n",my_pid, job_no, finish.tv_sec - start.tv_sec, finish.tv_nsec - start.tv_nsec,
                     		(finish.tv_sec - start.tv_sec) * 1.0 * (ONE_SEC/1000) + (finish.tv_nsec - start.tv_nsec) * 1.0 / 1000);
 
 		sleep_next_period();
 		return 1;
 	}
-}
-
-static void initialize(size_t arena_size, int shuffle) {
-       	struct timespec start, finish;
-
-        clock_gettime(CLOCK_REALTIME, &start);
- 
-	arena = allocate_arena(arena_size, 0, 0);
-	init_arena(arena, arena_size, shuffle);
-	
-        clock_gettime(CLOCK_REALTIME, &finish);
-        printf("init: %ld %ld %ld\n", finish.tv_sec - start.tv_sec, 
-		finish.tv_nsec - start.tv_nsec,
-        	(finish.tv_sec - start.tv_sec)*ONE_SEC + 
-		(finish.tv_nsec - start.tv_nsec));
-
-	sleep_next_period();
 }
 
 #define OPTSTR "p:c:C:weq:r:l:S:U:f:"
@@ -388,6 +440,7 @@ int main(int argc, char** argv)
 	//srand(getpid());
 	srand(0);
 
+
 	if (argc - optind < 3)
 		usage("Arguments missing.");
 
@@ -445,9 +498,9 @@ int main(int argc, char** argv)
 
 	init_litmus();
 
-	//printf("MX:before task_mode(LITMUS_RT_TASK)\n");
+	printf("MX:before task_mode(LITMUS_RT_TASK)\n");
 	ret = task_mode(LITMUS_RT_TASK);
-	//printf("MX:after task_mode(LITMUS_RT_TASK)\n");
+	printf("MX:after task_mode(LITMUS_RT_TASK)\n");
 	if (ret != 0)
 		bail_out("could not become RT task");
 
@@ -457,7 +510,8 @@ int main(int argc, char** argv)
 			bail_out("wait_for_ts_release()");
 	}
 
-	initialize(arena_size, shuffle);
+	random_full_each_line_func(arena_size, 0, loops);
+	//initialize(arena_size, shuffle);
 
 	my_pid = getpid();
 	start = wctime();

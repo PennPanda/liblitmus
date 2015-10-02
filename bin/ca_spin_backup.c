@@ -78,8 +78,7 @@ static cacheline_t* allocate_arena(size_t size, int use_huge_pages, int use_unca
 		flags |= MAP_ANONYMOUS;
 	}
 
-	//arena = mmap(0, size, PROT_READ | PROT_WRITE, flags, fd, 0);
-	arena = (cacheline_t*) malloc(size);
+	arena = mmap(0, size, PROT_READ | PROT_WRITE, flags, fd, 0);
 
 	if (use_uncache_pages) {
 		close(fd);
@@ -91,11 +90,7 @@ static cacheline_t* allocate_arena(size_t size, int use_huge_pages, int use_unca
 }
 
 static void dealloc_arena(cacheline_t* mem, size_t size) {
-	//int ret = munmap((void*)mem, size);
-	int ret = 0;
-	
-	if (mem) 
-		free((void*) mem);
+	int ret = munmap((void*)mem, size);
 
 	if (ret != 0) {
 		bail_out("munmap() error");
@@ -150,8 +145,7 @@ static void init_arena(cacheline_t* arena, size_t size, int shuffle) {
 }
 
 static cacheline_t* cacheline_start(int wss, int shuffle) {
-	//return arena + (shuffle * randrange(0, ((wss * 1024) / sizeof(cacheline_t))));
-	return arena;
+	return arena + (shuffle * randrange(0, ((wss * 1024) / sizeof(cacheline_t))));
 }
 
 static int cacheline_walk(cacheline_t *mem, int wss) {
@@ -385,8 +379,8 @@ int main(int argc, char** argv)
 		}
 	}
 
-	//srand(getpid());
-	srand(0);
+	srand(getpid());
+
 
 	if (argc - optind < 3)
 		usage("Arguments missing.");
@@ -445,9 +439,9 @@ int main(int argc, char** argv)
 
 	init_litmus();
 
-	//printf("MX:before task_mode(LITMUS_RT_TASK)\n");
+	printf("MX:before task_mode(LITMUS_RT_TASK)\n");
 	ret = task_mode(LITMUS_RT_TASK);
-	//printf("MX:after task_mode(LITMUS_RT_TASK)\n");
+	printf("MX:after task_mode(LITMUS_RT_TASK)\n");
 	if (ret != 0)
 		bail_out("could not become RT task");
 
