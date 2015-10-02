@@ -3,7 +3,6 @@
 SCHEDULER=$1
 CACHE_INIT=0xffff
 
-echo "Remove debug_log*"
 rm -f debug_log*
 
 echo 0 > /proc/sys/litmus/l1_prefetch

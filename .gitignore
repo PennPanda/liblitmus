@@ -1,7 +1,7 @@
 # object files
 *.o
 *.a
-
+*.pyc
 
 
 # generated files
@@ -28,6 +28,7 @@ ca_thrash
 rtspin_cache
 uncache
 cpu_spin
+ca_spin_hard
 
 # build system files
 .config

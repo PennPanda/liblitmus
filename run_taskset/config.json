@@ -1,0 +1,38 @@
+{
+	"work_dir": "/home/ubuntu/meng-code/liblitmus",
+
+	"data_dir": "taskset_data",
+
+	"output_dir": "taskset_output",
+	"print_output": true,
+
+	"min_cp": 1,
+	"max_cp": 16,
+
+	"duration": 60,
+
+	"schedulers": ["GSN-FPCA", "GSN-NPFPCA", "GSN-FP"],
+
+	"main_app": "./ca_spin",
+	"pollute_app": "./ca_thrash",
+
+	"init_shell": "./init.sh",
+	"release_ts": "./release_ts",
+	"st_trace": "st_trace",
+	"st_job_stats": "st_job_stats",
+	"calc_app": "./calc2.py",
+
+	"do_analysis": false,
+
+	"taskset_dir": "/home/ubuntu/tasksets/",
+	"taskset_profiles": [
+		"u-0.10-0.20-4.02-10-p-550-650-cl-1-16-ucb-0-cl-m-9-cl-16-llcL-0.19"
+	],
+	"max_tasksets": 5,
+
+	"lc_measure_app": "./ca_spin_hard",
+	"lc_measure_scheduler": "GSN-FPCA",
+	"lc_measure_output": "loopcounts",
+	"lc_measure_count": 20
+}
+
