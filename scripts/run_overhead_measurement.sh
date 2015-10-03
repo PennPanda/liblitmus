@@ -71,9 +71,9 @@ echo "set the environment"
 ./init.sh ${SCHED}
 sleep 1
 echo "reset the scheduler"
-setsched Linux
-setsched ${SCHED}
-showsched
+/home/ubuntu/liblitmus/setsched Linux
+/home/ubuntu/liblitmus/setsched ${SCHED}
+/home/ubuntu/liblitmus/showsched
 sudo cat /dev/litmus/log > ${LOG} &
 echo "Now start test case ${CASE}"
 # start feather trace
