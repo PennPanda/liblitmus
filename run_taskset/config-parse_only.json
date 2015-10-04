@@ -1,0 +1,9 @@
+{
+	"work_dir": "/home/hyonchoi/new-work/liblitmus",
+	"data_dir": "taskset_data",
+	"output_dir": "taskset_output",
+
+	"st_job_stats": "st_job_stats",
+
+	"print_output": true
+}

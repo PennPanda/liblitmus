@@ -48,3 +48,4 @@ debug*
 calib_data
 taskset_data/
 taskset_output/
+run_taskset/config.json
