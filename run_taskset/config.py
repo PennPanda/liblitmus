@@ -58,6 +58,8 @@ def _setup_instance():
 	date_str = now.strftime('%Y%m%d_%H%M%S')
 	outdir = '%s/%d-%s' % (conf['output_dir'], next_instance, date_str)
 
+	# copy original to base_dir
+	conf['output_base_dir'] = conf['output_dir']
 	conf['output_dir'] = outdir
 
 	if not os.path.exists(conf['output_dir']):

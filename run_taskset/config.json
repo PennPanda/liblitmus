@@ -16,6 +16,8 @@
 	"main_app": "./ca_spin",
 	"pollute_app": "./ca_thrash",
 
+    "use_pollute_task": false,
+
 	"init_shell": "./init.sh",
 	"release_ts": "./release_ts",
 	"st_trace": "st_trace",

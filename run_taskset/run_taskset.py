@@ -10,6 +10,7 @@ import taskset
 
 from config import printlog
 
+profiles = None
 
 def load_profiles():
 
@@ -18,7 +19,10 @@ def load_profiles():
 	profiles = dict()
 
 	for profile in config.conf['taskset_profiles']:
-		profiles[profile] = load_utilizations(dir, profile)
+		profiles[profile] = {
+			'profile': profile,
+			'utilizations': load_utilizations(dir, profile)
+		}
 
 	return profiles
 
@@ -29,7 +33,10 @@ def load_utilizations(basedir, subdir):
 
 	for entry in os.listdir(dir):
 		if os.path.isdir(dir + '/' + entry):
-			utilizations[entry] = load_tasksets(dir, entry)
+			utilizations[entry] = {
+				'utilization': entry,
+				'tasksets' : load_tasksets(dir, entry)
+			}
 
 	return utilizations
 
@@ -43,7 +50,11 @@ def load_tasksets(basedir, subdir):
 	for entry in os.listdir(dir):
 		if entry.endswith(suffix):
 			ti = entry.split('-')[0]
-			tasksets[ti] = load_tasks(dir, entry)
+			tasksets[ti] = {
+				'taskset': ti,
+				'complete': 0,
+				'tasks': load_tasks(dir, entry)
+			}
 
 	return tasksets
 
@@ -74,29 +85,43 @@ def load_tasks(dir, file):
 
 
 def load():
+	global profiles
 
 	profiles = load_profiles()
 
-	return profiles
+def save():
+	global profiles
 
-def run(profiles):
+	pathname = '{}/profiles.json'.format(config.conf['output_dir'])
+
+	with open(pathname, 'w') as outfile:
+		json.dump(profiles, outfile, sort_keys=True, indent=4)
+
+def run():
+	global profiles
+
 	for p in profiles:
 		profile = profiles[p]
 		prefix = p
 
+        # save duration and schedulers information to profiles
+        profile['duration'] = config.conf['duration']
+        profile['schedulers'] = config.conf['schedulers']
+
 		printlog(1, "Run Profile: {}".format(prefix))
 
-		run_utilizations(prefix, profile)
+		run_utilizations(prefix, profile['utilizations'])
 
 
 def run_utilizations(prefix, utils):
-	for un in sorted(utils):
-		tasksets = utils[un]
-		subprefix = '%s#%s' % (prefix, un)
+	for ut in sorted(utils):
+		util = utils[ut]
+
+		subprefix = '%s#%s' % (prefix, util)
 
 		printlog(1, "Run Utilization: {}".format(subprefix))
 
-		run_tasksets(subprefix, tasksets)
+		run_tasksets(subprefix, util['tasksets'])
 
 def run_tasksets(prefix, tasksets):
 	for ts in sorted(tasksets):
@@ -109,7 +134,12 @@ def run_tasksets(prefix, tasksets):
 
 		printlog(1, "Run Taskset: {}".format(subprefix))
 
-		run_taskset(subprefix, taskset)
+		run_taskset(subprefix, taskset['tasks'])
+
+		# set complete flag
+		taskset['complete'] = 1
+
+		save()
 
 def run_taskset(prefix, tset):
 	tilist = build_taskinfos(tset)
@@ -120,7 +150,6 @@ def run_taskset(prefix, tset):
 		results = taskset.run(scheduler, tilist, subprefix)
 		if results is not None:
 			printlog(1, "Result: {}".format(results))
-	
 
 def build_taskinfos(taskset):
 	tilist = []
@@ -130,7 +159,8 @@ def build_taskinfos(taskset):
 
 		tilist.append(build_taskinfo(task))
 
-	tilist.append(build_thrashtask())
+    if config.conf['use_pollute_task']:
+	    tilist.append(build_thrashtask())
 
 	return tilist
 
@@ -175,12 +205,12 @@ def build_thrashtask():
 	return taskset.TaskInfo(app, params, 1)
 
 def main(argv):
-	profiles = load()
+	load()
 
-	#with open('log.txt', 'w') as outfile:
-	#	json.dump(profiles, outfile, sort_keys=True, indent=4)
+	# save first
+	save()
 
-	run(profiles)
+	run()
 
 if __name__ == "__main__":
 	main(sys.argv)

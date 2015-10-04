@@ -46,3 +46,5 @@ arch/*/include/uapi
 *.csv
 debug*
 calib_data
+taskset_data/
+taskset_output/
