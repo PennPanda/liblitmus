@@ -11,87 +11,6 @@ import jobstats
 
 from config import printlog
 
-'''
-def load(target_dir):
-
-    profiles = dict()
-
-    for p in config.conf['taskset_profiles']:
-
-        profiles[p] = {
-            'schedulers': None,
-            'utilizations': dict()
-        }
-
-        utils = profiles[p]['utilizations']
-
-        pathname = '{}/result_{}.csv'.format(target_dir, p)
-
-        schedulers = []
-
-        with open(pathname, 'r') as infile:
-            linecount = 0
-
-            for line in infile:
-                linecount += 1
-                if linecount == 1:
-                    continue
-
-                token = line.strip().split(',')
-                if len(token) == 3:
-                    util = token[0].strip()
-                    taskset = token[1].strip()
-                    scheduler = token[2].strip()
-                    
-                    if util not in utils:
-                        utils[util] = dict()
-                
-                    if scheduler not in utils[util]:
-                        utils[util][scheduler] = dict()
-
-                    if taskset not in utils[util][scheduler]:
-                        utils[util][scheduler][taskset] = dict()
-
-                    if scheduler not in schedulers:
-                        schedulers.append(scheduler)
-
-                elif len(token) == 16:
-                    task = token[3].strip()
-                    cp = token[4].strip()
-                    wcet = token[5].strip()
-                    period = token[6].strip()
-                    #pid = token[7].strip()
-                    ave_cet = token[8].strip()
-                    min_cet = token[9].strip()
-                    max_cet = token[10].strip()
-                    dlmiss = token[11].strip()
-                    dlmiss_all = token[12].strip()
-                    ave_resp = token[13].strip()
-                    min_resp = token[14].strip()
-                    max_resp = token[15].strip()
-
-                    utils[util][scheduler][taskset][task] = {
-                        'index': int(task),
-                        'cp': int(cp),
-                        'wcet': int(wcet),
-                        'period': int(period),
-                        'ave_cet': int(ave_cet),
-                        'min-cet': int(min_cet),
-                        'max_cet': int(max_cet),
-                        'dlmiss': int(dlmiss),
-                        'dlmiss_all': int(dlmiss_all),
-                        'ave_resp': int(ave_resp),
-                        'min_resp': int(min_resp),
-                        'max_resp': int(max_resp)
-                    }   
-
-        profiles[p]['schedulers'] = schedulers
-
-    with open('profiles.json', 'w') as outfile:
-        json.dump(profiles, outfile, sort_keys=True, indent=4)
-
-    return profiles
-'''
 def load(target_dir):
     pathname = '{}/profiles.json'.format(target_dir)
 
@@ -170,9 +89,104 @@ def generate_schedulable(profiles):
         mv_proc = subprocess.Popen(mv_args, shell=True)
         mv_proc.wait() 
 
+def get_average(iteratable):
+    sum = 0.0
+
+    for i in iteratable:
+        sum += i
+
+    return sum / float(len(iteratable))
+
+def generate_response_time(profiles):
+    for p in profiles:
+
+        avg_filename = 'avg-resp_{}.csv'.format(p)
+        wst_filename = 'wst-resp_{}.csv'.format(p)
+
+        schedulers = profiles[p]['schedulers']
+        utils = profiles[p]['utilizations']
+
+        with open(avg_filename, 'w') as avgfile, open(wst_filename, 'w') as wstfile:
+            avgfile.write("{}\n".format(p))
+            wstfile.write("{}\n".format(p))
+
+
+            avgfile.write("Utilization")
+            wstfile.write("Utilization")
+            for scheduler in schedulers:
+                avgfile.write(",{}".format(scheduler))
+                wstfile.write(",{}".format(scheduler))
+            avgfile.write("\n")
+            wstfile.write("\n")
+
+            for ut in sorted(utils):
+                util = utils[ut]
+
+                tasksets = util['tasksets']
+
+                avg_resp_all = {s:[] for s in schedulers}
+                wst_resp_all = {s:[] for s in schedulers}
+                complete_count = 0
+
+                for tsi in sorted(tasksets):
+                    taskset = tasksets[tsi]
+
+                    if taskset['complete'] == 0:
+                        continue
+
+                    complete_count += 1
+
+                    norm_max_resp = {s:[] for s in schedulers}
+        
+                    tasks = taskset['tasks']
+                    for ti in tasks:
+                        task = tasks[ti]
+
+                        jobstats = task['jobstat']
+
+                        for scheduler in jobstats:
+                            js = jobstats[scheduler]
+
+                            if js['max_resp'] > 0:
+                                aval = float(js['max_resp']) / float(task['period'])
+                                norm_max_resp[scheduler].append(aval)
+                            
+                    for scheduler in schedulers:
+                        wst = max(norm_max_resp[scheduler])
+                        avg = get_average(norm_max_resp[scheduler])
+
+                        avg_resp_all[scheduler].append(avg)
+                        wst_resp_all[scheduler].append(wst)
+
+                if complete_count == 0:
+                    continue
+
+                avgfile.write("{}".format(ut))
+                wstfile.write("{}".format(ut))
+                for scheduler in schedulers:
+                    final_avg_resp = get_average(avg_resp_all[scheduler])
+                    final_wst_resp = get_average(wst_resp_all[scheduler])
+
+                    avgfile.write(",{}".format(final_avg_resp))
+                    wstfile.write(",{}".format(final_wst_resp))
+
+                avgfile.write("\n")
+                wstfile.write("\n")
+
+        # move the file to output_dir
+        mv_args = 'mv -f {} {}'.format(avg_filename, config.conf['output_dir'])
+        mv_proc = subprocess.Popen(mv_args, shell=True)
+        mv_proc.wait() 
+
+        mv_args = 'mv -f {} {}'.format(wst_filename, config.conf['output_dir'])
+        mv_proc = subprocess.Popen(mv_args, shell=True)
+        mv_proc.wait() 
+
 def generate(profiles):
 
     generate_schedulable(profiles)
+
+    generate_response_time(profiles)
 
  
 def find_target_dir(index):
