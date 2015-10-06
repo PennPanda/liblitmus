@@ -7,7 +7,7 @@ source overhead_measurement_list.sh
 FLAG_TRACE_IPI=1
 FLAG_FTCAT_FIFO=1
 FLAG_OH=1
-ST_TRACE_PATH=/tmp/
+ST_TRACE_PATH=./trace_bin
 
 CASE=$1
 DUR=$2
@@ -119,16 +119,11 @@ killall st_trace
 killall -2 ftcat
 killall cat
 
-for ((j=0;j<400;j+=1));do
-killall -9 ca_spin &
-killall -9 ca_spin &
-killall -9 ca_spin &
-killall -9 rtspin &
-killall -9 rtspin &
-killall -9 rtspin &
-killall -9 ${RTTASK} &
-killall -9 ${RTTASK} &
-killall -9 ${RTTASK} &
+for ((j=0;j<100;j+=1));do
+	killall -9 ca_spin &
+	killall -9 ca_spinwrite &
+	killall -9 rtspin &
+	killall -9 ${RTTASK} &
 done
 
 check_system_idle
