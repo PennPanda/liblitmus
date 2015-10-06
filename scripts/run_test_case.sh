@@ -6,7 +6,7 @@ source test_case_list.sh
 # system crash due to lack of memory when we enable IPI trace with st_trace
 FLAG_TRACE_IPI=0
 FLAG_FTCAT_FIFO=1
-FLAG_OH=1
+FLAG_OH=0
 ST_TRACE_PATH=/dev/shm
 
 CASE=$1
@@ -79,12 +79,13 @@ sleep 2
 fi
 
 if [[ ${FLAG_OH} == "1" ]]; then
-#OH_EVENTS="CXS_START CXS_END SCHED_START SCHED_END SCHED2_START SCHED2_END RELEASE_START RELEASE_END RELEASE_LATENCY"
-OH_EVENTS="CXS_START CXS_END"
-ftcat -v -c /dev/litmus/ft_cpu_trace0 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-0.bin &
-ftcat -v -c /dev/litmus/ft_cpu_trace1 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-1.bin &
-ftcat -v -c /dev/litmus/ft_cpu_trace2 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-2.bin & 
-ftcat -v -c /dev/litmus/ft_cpu_trace3 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-3.bin &
+OH_EVENTS="CXS_START CXS_END SCHED_START SCHED_END SCHED2_START SCHED2_END RELEASE_START RELEASE_END RELEASE_LATENCY"
+#OH_EVENTS="CXS_START CXS_END"
+echo "trace events ${OH_EVENTS}"
+ftcat /dev/litmus/ft_cpu_trace0 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-0.bin &
+ftcat /dev/litmus/ft_cpu_trace1 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-1.bin &
+ftcat /dev/litmus/ft_cpu_trace2 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-2.bin & 
+ftcat /dev/litmus/ft_cpu_trace3 ${OH_EVENTS} > ${ST_TRACE_PATH}/oh-${ST_TRACE_NAME}-3.bin &
 fi
 
 if [[ ${FLAG_FTCAT_FIFO} == "1" ]];then
@@ -110,13 +111,21 @@ if [[ "${WAIT}" == "-w" ]]; then
 fi
 sleep ${DUR}
 
+for((j=1;j<50;j+=1));do
+	killall -9 ca_spin &
+	killall -9 rtspin &
+	killall -9 ca_spinwrite &
+done
+
 check_system_idle
 
 if [[ "${i}" == "${MAX_CHECK_STATUS}" ]]; then
 	echo "[ATTENTION] Has task remaining in system after experiment!"
 	echo "Force all RT tasks exit..."
-	echo "killall -9 rtspin"
-	killall -9 rtspin
+	echo "killall -9 ca_spin"
+	killall -9 ca_spin &
+	killall -9 rtspin &
+	killall -9 ca_spinwrite &
 	check_system_idle
 fi
 

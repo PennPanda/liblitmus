@@ -297,7 +297,7 @@ if [[ ${CASE} == 11 ]]; then
 		rand=`cat /tmp/random`
 		exe=$(( $(( ${period} * ${rand} )) / 100 ))
 		echo "./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &"
-		./rtspin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &
+		./ca_spin ${exe} ${period} ${DUR} -q ${i} -C ${cp} ${WAIT} &
 		util=$(( ${util} +  $(( $(( ${exe} * 100 )) / ${period} )) ))
 		if [[ ${util} -ge 350 ]]; then
 			break;
