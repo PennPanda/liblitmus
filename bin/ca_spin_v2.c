@@ -174,7 +174,6 @@ static int cacheline_walk(cacheline_t *mem, int wss) {
 	int sum, i, next;
 
 	int numlines = wss * CACHELINES_IN_1KB;
-	int num_hot_lines = hot_wss_B / sizeof(cacheline_t);
 
 	sum = 0;
 
@@ -183,14 +182,29 @@ static int cacheline_walk(cacheline_t *mem, int wss) {
 	/* Iterate over whole array */
 	for (i = 0; i < numlines; i++) {
 		next = arena[next].line[0];
-		sum += next;
-	}
-	/* Iterate over hot_wss_B only */
-	for (i = 0; i < num_hot_lines; i++) {
-		next = arena[next].line[1];
 		sum -= next;
 	}
 
+	return sum;
+}
+
+static int cacheline_walk_hot(cacheline_t *mem, int wss) {
+	int sum, i, next;
+
+	int num_hot_lines = hot_wss_B / sizeof(cacheline_t);
+
+	sum = 0;
+
+	next = mem - arena;
+
+	/* Iterate over hot_wss_B only */
+	for (i = 0; i < num_hot_lines; i++) {
+		next = arena[next].line[1];
+		sum += next;
+	}
+	if (flag_printf >= 2)
+		printf("sum=%d\n", sum);
+	
 	return sum;
 }
 
@@ -218,6 +232,17 @@ static int loop_once(int wss, int shuffle) {
 	/* Should always start with the first element */
 	mem = cacheline_start(wss, shuffle);
 	temp = cacheline_walk(mem, wss);
+
+	return temp; 
+}
+
+static int loop_hot_once(int wss, int shuffle) {
+	cacheline_t *mem;
+	int temp;
+	
+	/* Should always start with the first element */
+	mem = cacheline_start(wss, shuffle);
+	temp = cacheline_walk_hot(mem, wss);
 
 	return temp; 
 }
@@ -292,12 +317,21 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
 		invalid_cp_flag = 0;
                 clock_gettime(CLOCK_REALTIME, &start);
  
+		/* Walk whole array */
 		while(iter++ < loops) {
-			check_cp_setting(start);
+			//check_cp_setting(start);
 			/* each cp takes 100us if cache hit */
 			if (use_cpu_loop)
 				loop_cpu_once(100 * NUM_CP);
 			loop_once(wss, shuffle);
+		}
+		iter = 0;
+		while(iter++ < hot_loops) {
+			//check_cp_setting(start);
+			/* each cp takes 100us if cache hit */
+			if (use_cpu_loop)
+				loop_cpu_once(100 * NUM_CP);
+			loop_hot_once(wss, shuffle);
 		}
 
                 clock_gettime(CLOCK_REALTIME, &finish);
@@ -327,13 +361,14 @@ static void initialize(size_t arena_size, int shuffle) {
 	sleep_next_period();
 }
 
-#define OPTSTR "p:c:C:weq:r:l:s:L:S:U:f:"
+#define OPTSTR "p:c:C:weq:r:l:s:L:S:U:f:D:"
 int main(int argc, char** argv)
 {
 	int ret;
 	lt_t wcet;
 	lt_t period;
-	double wcet_ms, period_ms;
+	lt_t deadline;
+	double wcet_ms, period_ms, deadline_ms;
 	unsigned int priority = LITMUS_LOWEST_PRIORITY;
 	unsigned int num_cache_partitions = NUM_CACHE_PARTITIONS;
 	int migrate = 0;
@@ -356,6 +391,9 @@ int main(int argc, char** argv)
 
 	while ((opt = getopt(argc, argv, OPTSTR)) != -1) {
 		switch (opt) {
+		case 'D':
+			deadline_ms = atoi(optarg);
+			break;
 		case 'w':
 			wait = 1;
 			break;
@@ -427,14 +465,17 @@ int main(int argc, char** argv)
 
 	wcet   = ms2ns(wcet_ms);
 	period = ms2ns(period_ms);
+	deadline = ms2ns(deadline_ms);
 	if (wcet <= 0)
 		usage("The worst-case execution time must be a "
 				"positive number.");
 	if (period <= 0)
 		usage("The period must be a positive number.");
-	if (wcet > period) {
+	if (deadline <= 0)
+		usage("The deadline must be a positive number.");
+	if (wcet > period || wcet > deadline) {
 		usage("The worst-case execution time must not "
-				"exceed the period.");
+				"exceed the period or deadline.");
 	}
 
 	duration  = atof(argv[optind + 2]);
@@ -460,6 +501,7 @@ int main(int argc, char** argv)
 	init_rt_task_param(&param);
 	param.exec_cost = wcet;
 	param.period = period;
+	param.relative_deadline = deadline;
 	param.priority = priority;
 	param.cls = class;
 	param.budget_policy = (want_enforcement) ?
