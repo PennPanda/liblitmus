@@ -7,7 +7,7 @@ source overhead_measurement_list.sh
 FLAG_TRACE_IPI=1
 FLAG_FTCAT_FIFO=1
 FLAG_OH=1
-ST_TRACE_PATH=/tmp/
+ST_TRACE_PATH=./trace_bin
 
 CASE=$1
 DUR=$2
