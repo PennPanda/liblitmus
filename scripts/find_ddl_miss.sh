@@ -9,6 +9,6 @@ if [[ "${FILE}" == "" ]];then
 	exit 1;
 fi
 
-echo "Parse ${TRACE_CSV}/st-${FILE}.csv"
+echo "[find_ddl_miss] Parse ${TRACE_CSV}/st-${FILE}.csv"
 awk '$6 >= 1 { print $0}' ${TRACE_CSV}/st-${FILE}.csv > ${TRACE_CSV}/st-${FILE}.ddlmiss
 cat ${TRACE_CSV}/st-${FILE}.ddlmiss

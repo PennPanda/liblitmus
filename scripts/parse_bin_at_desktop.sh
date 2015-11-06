@@ -2,10 +2,10 @@
 INPUT=$1
 MSG_TRACE=$2
 
-DIR=`pwd`
-TRACE_BIN=${DIR}/../trace_bin
-TRACE_CSV=${DIR}/../trace_csv
-TRACE_OH=${DIR}/../trace_oh
+DIR=~/mengxu/rtas2016-workspace/trace/overhead-measurement/
+TRACE_BIN=${DIR}/trace_bin
+TRACE_CSV=${DIR}/trace_csv
+TRACE_OH=${DIR}/trace_oh
 
 mkdir ${TRACE_OH}
 
