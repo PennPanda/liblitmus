@@ -40,3 +40,5 @@ echo ${CACHE_INIT} > /proc/sys/litmus/C3_LA_way
 echo ${CACHE_INIT} > /proc/sys/litmus/C3_LB_way
 
 ./setsched ${SCHEDULER}
+setsched ${SCHEDULER}
+/home/ubuntu/liblitmus/setsched ${SCHEDULER}

@@ -2,6 +2,34 @@
 
 test_case(){
 #now at liblitmus folder
+if [[ ${CASE} == 3001 ]]; then
+	./ca_spin_v2 -q 1 -C 4 -s 1024 -l 10 -S 128 -L 900 -r 1 -U 0 -f 0 250 400 ${DUR} &
+	./ca_spin_v2 -q 2 -C 4 -s 1024 -l 100 -S 128 -L 0 -r 1 -U 0 -f 0 590 600 ${DUR} &
+	./ca_spin_v2 -q 3 -C 4 -s 1024 -l 100 -S 128 -L 0 -r 1 -U 0 -f 0 590 600 ${DUR} &
+	./ca_spin_v2 -q 4 -C 4 -s 1024 -l 100 -S 128 -L 0 -r 1 -U 0 -f 0 590 600 ${DUR} &
+fi
+
+if [[ ${CASE} == 3002 ]]; then
+	./ca_spin_v2 -q 1 -C 4 -s 1024 -l 10 -S 128 -L 900 -r 1 -U 0 -f 0 250 400 ${DUR} &
+	./ca_spin_v2 -q 2 -C 4 -s 1024 -l 10 -S 128 -L 900 -r 1 -U 0 -f 0 250 400 ${DUR} &
+	./ca_spin_v2 -q 3 -C 4 -s 1024 -l 10 -S 128 -L 900 -r 1 -U 0 -f 0 250 400 ${DUR} &
+	./ca_spin_v2 -q 4 -C 4 -s 1024 -l 10 -S 128 -L 900 -r 1 -U 0 -f 0 250 400 ${DUR} &
+fi
+
+if [[ ${CASE} == 3003 ]]; then
+	./ca_spin_v2 -q 1 -C 16 -s 128 -l 10 -S 128 -L 900 -r 1 -U 0 -f 0 -D 185 185 1000 ${DUR} &
+	./ca_spin_v2 -q 1 -C 5 -s 320 -l 230 -S 32 -L 0 -r 1 -U 0 -f 0 -D 1000 200 1000  ${DUR} &
+	./ca_spin_v2 -q 1 -C 5 -s 320 -l 230 -S 32 -L 0 -r 1 -U 0 -f 0 -D 1000 200 1000  ${DUR} &
+	./ca_spin_v2 -q 1 -C 5 -s 320 -l 230 -S 32 -L 0 -r 1 -U 0 -f 0 -D 1000 200 1000  ${DUR} &
+fi
+
+if [[ ${CASE} == 3004 ]]; then
+	./ca_spin_v2 -q 1 -C 16 -s 128 -l 10 -S 128 -L 900 -r 1 -U 0 -f 0 -D 185 185 1000 ${DUR} &
+	./ca_spin_v2 -q 1 -C 16 -s 128 -l 10 -S 128 -L 900 -r 1 -U 0 -f 0 -D 1000 185 1000 ${DUR} &
+	./ca_spin_v2 -q 1 -C 16 -s 128 -l 10 -S 128 -L 900 -r 1 -U 0 -f 0 -D 1000 185 1000 ${DUR} &
+	./ca_spin_v2 -q 1 -C 16 -s 128 -l 10 -S 128 -L 900 -r 1 -U 0 -f 0 -D 1000 185 1000 ${DUR} &
+fi
+
 if [[ ${CASE} == 2003 ]]; then
 	./ca_spin ${WAIT} -q 1 -C 11 -S 704 -l 42 -r 1 -U 0 -f 0 200 200 ${DUR} &
 fi
