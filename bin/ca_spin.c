@@ -78,8 +78,8 @@ static cacheline_t* allocate_arena(size_t size, int use_huge_pages, int use_unca
 		flags |= MAP_ANONYMOUS;
 	}
 
-	//arena = mmap(0, size, PROT_READ | PROT_WRITE, flags, fd, 0);
-	arena = (cacheline_t*) malloc(size);
+	arena = mmap(0, size, PROT_READ | PROT_WRITE, flags, fd, 0);
+	//arena = (cacheline_t*) malloc(size);
 
 	if (use_uncache_pages) {
 		close(fd);
@@ -91,11 +91,11 @@ static cacheline_t* allocate_arena(size_t size, int use_huge_pages, int use_unca
 }
 
 static void dealloc_arena(cacheline_t* mem, size_t size) {
-	//int ret = munmap((void*)mem, size);
-	int ret = 0;
+	int ret = munmap((void*)mem, size);
+	//int ret = 0;
 	
-	if (mem) 
-		free((void*) mem);
+	//if (mem) 
+	//	free((void*) mem);
 
 	if (ret != 0) {
 		bail_out("munmap() error");
@@ -291,7 +291,7 @@ static void initialize(size_t arena_size, int shuffle) {
 
         clock_gettime(CLOCK_REALTIME, &start);
  
-	arena = allocate_arena(arena_size, 0, 0);
+	arena = allocate_arena(arena_size, 0, 1);
 	init_arena(arena, arena_size, shuffle);
 	
         clock_gettime(CLOCK_REALTIME, &finish);
@@ -303,7 +303,7 @@ static void initialize(size_t arena_size, int shuffle) {
 	sleep_next_period();
 }
 
-#define OPTSTR "p:c:C:weq:r:l:S:U:f:"
+#define OPTSTR "p:c:C:weq:r:l:S:U:f:P:"
 int main(int argc, char** argv)
 {
 	int ret;
@@ -320,6 +320,7 @@ int main(int argc, char** argv)
 	double duration = 0, start = 0;
 	task_class_t class = RT_CLASS_HARD;
 	struct rt_task param, param_tmp;
+    unsigned long page_color = 0xffffffffUL;
 
 	int wss = 0;
 	int shuffle = 1;
@@ -375,6 +376,15 @@ int main(int argc, char** argv)
 		case 'l':
 			loops = atoi(optarg);
 			break;
+        case 'P':
+            if (strlen(optarg) > 2 && optarg[0]=='0' && optarg[1]=='x') {
+                if (sscanf(optarg, "0x%lx", &page_color) != 1) {
+                    usage("Wrong -P option format: -P {0xffff | 65535}");
+                }
+            } else {
+                page_color = atol(optarg);
+            }
+            break;
 		case ':':
 			usage("Argument missing.");
 			break;
@@ -433,6 +443,8 @@ int main(int argc, char** argv)
 		param.cpu = cluster; //domain_to_first_cpu(cluster);
 
 	param.num_cache_partitions = num_cache_partitions;
+    param.page_colors = page_color;
+    param.color_index = 0;
 
 	ret = set_rt_task_param(gettid(), &param);
 	if (ret < 0)

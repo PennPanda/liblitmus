@@ -472,7 +472,11 @@ int main(int argc, char** argv)
 	if (period <= 0)
 		usage("The period must be a positive number.");
 	if (deadline <= 0)
-		usage("The deadline must be a positive number.");
+    {
+        deadline = period;
+        printf("Set deadline = period\n");
+		//usage("The deadline must be a positive number.");
+    }
 	if (wcet > period || wcet > deadline) {
 		usage("The worst-case execution time must not "
 				"exceed the period or deadline.");
