@@ -449,7 +449,7 @@ int main(int argc, char** argv)
 		bail_out("could not get rt task params");
 	printf("MX: num_cache_partitions=%d\n", param_tmp.num_cache_partitions);
 
-	printf("One cache line has %d int elements\n", INTS_IN_CACHELINE);
+	printf("One cache line has %ld int elements\n", INTS_IN_CACHELINE);
 
 	init_litmus();
 
