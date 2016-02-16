@@ -68,6 +68,9 @@ int set_rt_task_param(pid_t pid, struct rt_task* param);
  */
 int get_rt_task_param(pid_t pid, struct rt_task* param);
 
+int set_cos_ipi(uint32_t cos_id, uint32_t val, cycles_t *start, cycles_t *end);
+int set_cos_lock(uint32_t cos_id, uint32_t val, cycles_t *start, cycles_t *end);
+
 /* Debug helper */
 int get_rt_job_param(pid_t pid, struct rt_job* param);
 int mark_event(pid_t pid, int event_id, int data);

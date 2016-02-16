@@ -95,7 +95,12 @@ int release_ts(lt_t *delay)
 
 int set_cos_ipi(uint32_t cos_id, uint32_t val, cycles_t *start, cycles_t *end)
 {
-    return syscall(__NR_set_cos_ipi, cos_id, val, *start, *end);
+    return syscall(__NR_set_cos_ipi, cos_id, val, start, end);
+}
+
+int set_cos_lock(uint32_t cos_id, uint32_t val, cycles_t *start, cycles_t *end)
+{
+    return syscall(__NR_set_cos_lock, cos_id, val, start, end);
 }
 
 int null_call(cycles_t *timestamp)
