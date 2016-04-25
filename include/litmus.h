@@ -40,6 +40,14 @@ extern "C" {
 
 #include "migration.h"
 
+#define CONFIG_X86_64
+
+#if defined(CONFIG_ARM)
+#define MAX_CACHE_PARTITIONS    16
+#elif defined(CONFIG_X86) || defined(CONFIG_X86_64)
+#define MAX_CACHE_PARTITIONS    20
+#endif
+
 /**
  * @private
  * Number of semaphore protocol object types
