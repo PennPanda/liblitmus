@@ -1,5 +1,7 @@
 source test_case_list.sh
 
+cd ../
+
 echo "---test_case 1 start---"
 CASE=1
 WAIT=1
