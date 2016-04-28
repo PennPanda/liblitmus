@@ -73,7 +73,7 @@ AR  := ${CROSS_COMPILE}${AR}
 all     = lib ${rt-apps}
 rt-apps = cycles base_task rt_launch rtspin rtspin_cache release_ts measure_syscall \
 	  base_mt_task uncache runtests ca_spin ca_spin_v2 ca_spinwrite cpu_spin ca_thrash \
-	  eval-set-cos base_task_cos
+	  eval-set-cos 
 
 .PHONY: all lib clean dump-config TAGS tags cscope help doc
 
@@ -217,8 +217,6 @@ vpath %.c bin/
 obj-cycles = cycles.o
 
 obj-base_task = base_task.o
-
-obj-base_task_cos = base_task_cos.o
 
 obj-base_mt_task = base_mt_task.o
 ldf-base_mt_task = -pthread

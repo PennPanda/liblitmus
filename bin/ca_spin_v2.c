@@ -361,7 +361,7 @@ static void initialize(size_t arena_size, int shuffle) {
 	sleep_next_period();
 }
 
-#define OPTSTR "p:c:C:weq:r:l:s:L:S:U:f:D:"
+#define OPTSTR "p:c:C:weq:r:l:s:L:S:U:f:D:P:"
 int main(int argc, char** argv)
 {
 	int ret;
@@ -379,6 +379,7 @@ int main(int argc, char** argv)
 	double duration = 0, start = 0;
 	task_class_t class = RT_CLASS_HARD;
 	struct rt_task param, param_tmp;
+    int set_of_cp_init;
 
 	int wss = 0;
 	int shuffle = 1;
@@ -417,6 +418,10 @@ int main(int argc, char** argv)
 				usage("Invalid partition number. Must be [0,16]");
 			NUM_CP = num_cache_partitions;
 			break;
+        case 'P':
+            sscanf(optarg, "%x", &set_of_cp_init);
+            if ( set_of_cp_init == 0 )
+                usage("Invalid initial cache partition seting. must be at least 2 cps");
 		case 'U':
 			use_cpu_loop = atoi(optarg);
 			break;
@@ -462,6 +467,8 @@ int main(int argc, char** argv)
 
 	wcet_ms   = atof(argv[optind + 0]);
 	period_ms = atof(argv[optind + 1]);
+
+    printf("MAX_CACHE_PARTITIONS=%d\n", MAX_CACHE_PARTITIONS);
 
 	wcet   = ms2ns(wcet_ms);
 	period = ms2ns(period_ms);
@@ -510,6 +517,7 @@ int main(int argc, char** argv)
 		param.cpu = cluster; //domain_to_first_cpu(cluster);
 
 	param.num_cache_partitions = num_cache_partitions;
+    param.set_of_cp_init = set_of_cp_init;
 
 	ret = set_rt_task_param(gettid(), &param);
 	if (ret < 0)
