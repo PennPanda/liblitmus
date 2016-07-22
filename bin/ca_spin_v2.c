@@ -306,13 +306,33 @@ void check_cp_setting(struct timespec start)
 void die(char *x){ perror(x); exit(1); };
 #define ONE_SEC 1000000000L
 #define BS	1024
+uint32_t cp1 = 0xff;
+uint32_t cp2 = 0xff00;
 static int job(int wss, int shuffle, double exec_time, double program_end)
 {
 	if (wctime() > program_end)
 		return 0;
 	else {
 		register unsigned int iter = 0;
-        	struct timespec start, finish;
+        struct timespec start, finish;
+        int ret;
+	    struct rt_task param;
+
+        printf("test change cp_set_init online\n");
+        ret = get_rt_task_param(gettid(), &param);
+        if (ret < 0)
+            bail_out("could not get rt task param");
+
+        if ( param.set_of_cp_init == cp1 )
+            param.set_of_cp_init = cp2;
+        else
+            param.set_of_cp_init = cp1;
+
+	    ret = set_rt_task_param(gettid(), &param);
+	    if (ret < 0)
+		    bail_out("could not setup rt task params");
+
+        printf("set_of_cp_init=0x%x now\n", param.set_of_cp_init);
 
 		invalid_cp_flag = 0;
                 clock_gettime(CLOCK_REALTIME, &start);
@@ -385,7 +405,6 @@ int main(int argc, char** argv)
 	int shuffle = 1;
 	size_t arena_size;
 	int size_kb = -1;
-	int ch;
 
 	job_no = 0;
 
@@ -519,9 +538,6 @@ int main(int argc, char** argv)
 
 	param.num_cache_partitions = num_cache_partitions;
     param.set_of_cp_init = set_of_cp_init;
-
-	ch = getchar();
-	printf("input char: %d\n", ch);
 
 	ret = set_rt_task_param(gettid(), &param);
 	if (ret < 0)
