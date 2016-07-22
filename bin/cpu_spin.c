@@ -37,6 +37,7 @@ static char* progname;
 static pid_t my_pid;
 static int job_no;
 static int NUM_CP;
+static int force_print=0;
 //////////////////////////////////////////
 
 #define KB_IN_CACHE_PARTITION	64
@@ -188,7 +189,8 @@ void check_cp_setting(struct timespec start)
 	cp_cur = job_params.cache_partitions;
 	if (cp_cur != cp_prev)
 	{
-		printf("pid=%d job_no=%d cpu_prev=%d cpu_cur=%d cp_prev=0x%x cp_cur=0x%x dur_invalidt=%.3fus\n",
+        if (force_print)
+   		printf("pid=%d job_no=%d cpu_prev=%d cpu_cur=%d cp_prev=0x%x cp_cur=0x%x dur_invalidt=%.3fus\n",
 			my_pid, job_no, cpu_prev, cpu, cp_prev, cp_cur, dur_tmp);
 		cp_prev = cp_cur;
 	}
@@ -206,6 +208,7 @@ void check_cp_setting(struct timespec start)
 		invalid_cp_flag = 0;
 		dur_tmp = (cur_time.tv_sec - start.tv_sec) * 1000000 
 			+ (cur_time.tv_nsec - start.tv_nsec) * 1.0 / 1000;
+        if (force_print)
 		printf("pid=%d job_no=%d cpu_prev=%d cpu_cur=%d cp_prev=0x%x cp_cur=0x%x dur_invalidt=%.3fus\n",
 			my_pid, job_no, cpu_prev, cpu, cp_prev, cp_cur, dur_tmp);
 	}
@@ -223,23 +226,26 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
         	struct timespec start, finish;
 
 		invalid_cp_flag = 0;
-                clock_gettime(CLOCK_REALTIME, &start);
+        if (force_print)
+          clock_gettime(CLOCK_REALTIME, &start);
  
 		while(iter++ < loops) {
 			check_cp_setting(start);
 			loop_once(wss, shuffle);
 		}
-
-                clock_gettime(CLOCK_REALTIME, &finish);
-                printf("[WCET] pid=%d job_no=%d %ld %ld %.3fus\n",my_pid, job_no, finish.tv_sec - start.tv_sec, finish.tv_nsec - start.tv_nsec,
-                    (finish.tv_sec - start.tv_sec) * 1.0 * (ONE_SEC/1000) + (finish.tv_nsec - start.tv_nsec) * 1.0 / 1000);
+ 
+        if (force_print) {
+            clock_gettime(CLOCK_REALTIME, &finish);
+            printf("[WCET] pid=%d job_no=%d %ld %ld %.3fus\n",my_pid, job_no, finish.tv_sec - start.tv_sec, finish.tv_nsec - start.tv_nsec,
+               (finish.tv_sec - start.tv_sec) * 1.0 * (ONE_SEC/1000) + (finish.tv_nsec - start.tv_nsec) * 1.0 / 1000);
+        }
 
 		sleep_next_period();
 		return 1;
 	}
 }
 
-#define OPTSTR "p:c:C:weq:r:l:S:"
+#define OPTSTR "p:c:C:weq:r:l:S:f:F:"
 int main(int argc, char** argv)
 {
 	int ret;
@@ -248,6 +254,7 @@ int main(int argc, char** argv)
 	double wcet_ms, period_ms;
 	unsigned int priority = LITMUS_LOWEST_PRIORITY;
 	unsigned int num_cache_partitions = NUM_CACHE_PARTITIONS;
+    unsigned int cp_init = 0;
 	int migrate = 0;
 	int cluster = 0;
 	int opt;
@@ -305,6 +312,14 @@ int main(int argc, char** argv)
 		case 'l':
 			loops = atoi(optarg);
 			break;
+        case 'f':
+            force_print = atoi(optarg);
+            break;
+        case 'F':
+            if(sscanf(optarg, "0x%x", &cp_init) != 1) {
+              cp_init=0;
+            }
+            break;
 		case ':':
 			usage("Argument missing.");
 			break;
@@ -368,6 +383,7 @@ int main(int argc, char** argv)
 		param.cpu = cluster; //domain_to_first_cpu(cluster);
 
 	param.num_cache_partitions = num_cache_partitions;
+    param.set_of_cp_init = cp_init;
 
 	ret = set_rt_task_param(gettid(), &param);
 	if (ret < 0)
