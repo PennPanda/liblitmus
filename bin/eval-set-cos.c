@@ -123,7 +123,7 @@ int main (int argc, char* argv[])
         return 2;
     }
 
-    memset(latency, 0, sizeof(latency));
+    memset(latency, 0, sizeof(*latency));
     /* set cpu affinity */
     CPU_ZERO(&cpuset);
     CPU_SET(s_cpu_id, &cpuset);

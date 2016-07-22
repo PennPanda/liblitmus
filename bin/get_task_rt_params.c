@@ -59,7 +59,11 @@ int main(int argc, char** argv)
 	}
 
 	printf("pid=%d\n", pid);
-	get_rt_task_param(pid, &param);
+	if (get_rt_task_param(pid, &param))
+	{
+		printf("get_rt_task_param fails\n");
+		exit(1);
+	}
 
 	print_rt_param(&param);
 
