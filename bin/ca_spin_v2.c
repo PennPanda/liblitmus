@@ -385,6 +385,7 @@ int main(int argc, char** argv)
 	int shuffle = 1;
 	size_t arena_size;
 	int size_kb = -1;
+	int ch;
 
 	job_no = 0;
 
@@ -518,6 +519,9 @@ int main(int argc, char** argv)
 
 	param.num_cache_partitions = num_cache_partitions;
     param.set_of_cp_init = set_of_cp_init;
+
+	ch = getchar();
+	printf("input char: %d\n", ch);
 
 	ret = set_rt_task_param(gettid(), &param);
 	if (ret < 0)
