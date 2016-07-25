@@ -316,9 +316,10 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
 		register unsigned int iter = 0;
         struct timespec start, finish;
         int ret;
-	    struct rt_task param;
+	struct rt_task param;
+	int ch = 0;
 
-        printf("test change cp_set_init online\n");
+        printf("test change cp_set_init online, ch=%d\n", ch);
         ret = get_rt_task_param(gettid(), &param);
         if (ret < 0)
             bail_out("could not get rt task param");
@@ -333,6 +334,7 @@ static int job(int wss, int shuffle, double exec_time, double program_end)
 		    bail_out("could not setup rt task params");
 
         printf("set_of_cp_init=0x%x now\n", param.set_of_cp_init);
+	ch = getchar();
 
 		invalid_cp_flag = 0;
                 clock_gettime(CLOCK_REALTIME, &start);
