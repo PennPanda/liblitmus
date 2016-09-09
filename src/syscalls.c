@@ -28,6 +28,16 @@ int get_rt_task_param(pid_t pid, struct rt_task *param)
 	return syscall(__NR_get_rt_task_param, pid, param);
 }
 
+int set_rt_task_cps(pid_t pid, struct rt_cache *param)
+{
+	return syscall(__NR_set_rt_task_cps, pid, param);
+}
+
+int get_rt_task_cps(pid_t pid, struct rt_cache *param)
+{
+	return syscall(__NR_get_rt_task_cps, pid, param);
+}
+
 int get_rt_job_param(pid_t pid, struct rt_job *param)
 {
 	return syscall(__NR_get_rt_job_param, pid, param);

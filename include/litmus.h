@@ -76,6 +76,22 @@ int set_rt_task_param(pid_t pid, struct rt_task* param);
  */
 int get_rt_task_param(pid_t pid, struct rt_task* param);
 
+/**
+ * Set real-time task cache configuration for given process
+ * @param pid PID of process
+ * @param param Real-time task cache configuration struct to fill
+ * @return 0 on success
+ */
+int set_rt_task_cps(pid_t pid, struct rt_cache* param);
+
+/**
+ * Get real-time task cache configuration for given process
+ * @param pid PID of process
+ * @param param Real-time task cache configuration struct to fill
+ * @return 0 on success
+ */
+int get_rt_task_cps(pid_t pid, struct rt_cache* param);
+
 int set_cos_ipi(uint32_t cos_id, uint32_t val, cycles_t *start, cycles_t *end);
 int set_cos_lock(uint32_t cos_id, uint32_t val, cycles_t *start, cycles_t *end);
 
