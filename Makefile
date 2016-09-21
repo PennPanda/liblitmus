@@ -74,7 +74,7 @@ all     = lib ${rt-apps}
 rt-apps = cycles base_task rt_launch rtspin rtspin_cache release_ts measure_syscall \
 	  base_mt_task uncache runtests ca_spin ca_spin_v2 ca_spinwrite cpu_spin ca_thrash \
 	  eval-set-cos get_task_rt_params set_task_rt_params get_task_rt_cps set_task_rt_cps \
-	  measure_set_cp_overhead
+	  measure_set_cp_overhead ca_spin_v3_oh_measurement
 
 .PHONY: all lib clean dump-config TAGS tags cscope help doc
 
@@ -243,6 +243,9 @@ lib-ca_spin = -lrt
 
 obj-ca_spin_v2 = ca_spin_v2.o common.o
 lib-ca_spin_v2 = -lrt
+
+obj-ca_spin_v3_oh_measurement = ca_spin_v3_oh_measurement.o common.o
+lib-ca_spin_v3_oh_measurement = -lrt
 
 obj-ca_spinwrite = ca_spinwrite.o common.o
 lib-ca_spinwrite = -lrt
