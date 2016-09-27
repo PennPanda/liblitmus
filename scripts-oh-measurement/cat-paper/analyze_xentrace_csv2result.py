@@ -96,13 +96,17 @@ def cal_stat(oh_datas, oh_stats):
         oh_mean = np.mean(oh_data)
         oh_median = np.median(oh_data)
         oh_stddev = np.std(oh_data)
-        oh_stats.append([oh_mean, oh_median, oh_stddev]);
+        oh_max = np.max(oh_data)
+        oh_min = np.min(oh_data)
+        oh_99percentile = np.percentile(oh_data, 99);
+        oh_95percentile = np.percentile(oh_data, 95);
+        oh_stats.append([oh_mean, oh_median, oh_stddev, oh_max, oh_min, oh_99percentile, oh_95percentile]);
         print oh_stats[i]
 
 def write_stats_to_files(oh_stats, stats_files):
     for i in range(len(oh_stats)):
-        print >> stats_files[i], '#mean', '\t', 'median', '\t', 'stddev'
-        print >> stats_files[i], oh_stats[i][0], '\t', oh_stats[i][1], '\t', oh_stats[i][2]
+        print >> stats_files[i], '#mean', '\t', 'median', '\t', 'stddev', '\t', 'max', '\t', 'min', '\t', '99percentile', '\t', '95percentile'
+        print >> stats_files[i], oh_stats[i][0], '\t', oh_stats[i][1], '\t', oh_stats[i][2], '\t', oh_stats[i][3], '\t', oh_stats[i][4], '\t', oh_stats[i][5], '\t', oh_stats[i][6]
 
         
 def main():
