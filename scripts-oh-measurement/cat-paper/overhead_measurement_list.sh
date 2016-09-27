@@ -52,7 +52,7 @@ generate_workload(){
 		fi
 		shuf -i ${util_min}-${util_max} -n 1 > ${FILE_RANDOM}
 		rand=`cat /tmp/random`
-		exe=$(( $(( ${period} * ${rand} )) / 1000 ))
+		exe=$(( $(( ${period} * ${rand} )) / 1000 + 1))
 		wss=$(( ${cp} * 10 )) # we do not allocate too much memory to avoid out of memory
         generate_cp_setting ${cp} > /tmp/cp_setting
         CPs=`cat /tmp/cp_setting`

@@ -1,6 +1,6 @@
 #!/bin/bash
 # cat /dev/litmus/log > debug.txt &
-source 00_envs.sh
+source 00_env.sh
 source read_status.sh
 source overhead_measurement_list.sh 
 
@@ -12,7 +12,7 @@ source overhead_measurement_list.sh
 #export PATH=${PATH}:${SCRIPTS_ROOT}:.
 
 # system crash due to lack of memory when we enable IPI trace with st_trace
-FLAG_TRACE_IPI=1
+FLAG_TRACE_IPI=0
 FLAG_FTCAT_FIFO=0 # should always be 0 for GSN-EDF
 FLAG_OH=1
 
@@ -83,8 +83,8 @@ sudo rm -f ${LOG}
 sudo killall cat &> /dev/null
 sleep 1
 echo "set the environment"
-setsched ${SCHED}
-showsched 
+sudo setsched ${SCHED}
+sudo showsched 
 sleep 1
 #echo "reset the scheduler"
 #/home/ubuntu/liblitmus/setsched Linux
@@ -102,15 +102,17 @@ echo "Now start test case ${CASE}"
 #sleep 2
 #fi
 
+echo "Start overhead event tracing"
 if [[ ${FLAG_OH} == "1" ]]; then
 OH_EVENTS="CXS_START CXS_END SCHED_START SCHED_END SCHED2_START SCHED2_END RELEASE_START RELEASE_END RELEASE_LATENCY"
 #OH_EVENTS="CXS_START CXS_END"
-ftcat -v /dev/litmus/ft_cpu_trace0 ${OH_EVENTS} > ${ST_TRACE_FOLDER}/oh-${ST_TRACE_NAME}-0.bin &
-ftcat -v /dev/litmus/ft_cpu_trace1 ${OH_EVENTS} > ${ST_TRACE_FOLDER}/oh-${ST_TRACE_NAME}-1.bin &
-ftcat -v /dev/litmus/ft_cpu_trace2 ${OH_EVENTS} > ${ST_TRACE_FOLDER}/oh-${ST_TRACE_NAME}-2.bin & 
-ftcat -v /dev/litmus/ft_cpu_trace3 ${OH_EVENTS} > ${ST_TRACE_FOLDER}/oh-${ST_TRACE_NAME}-3.bin &
+sudo ftcat -v /dev/litmus/ft_cpu_trace0 ${OH_EVENTS} > ${ST_TRACE_FOLDER}/oh-${ST_TRACE_NAME}-0.bin &
+sudo ftcat -v /dev/litmus/ft_cpu_trace1 ${OH_EVENTS} > ${ST_TRACE_FOLDER}/oh-${ST_TRACE_NAME}-1.bin &
+sudo ftcat -v /dev/litmus/ft_cpu_trace2 ${OH_EVENTS} > ${ST_TRACE_FOLDER}/oh-${ST_TRACE_NAME}-2.bin & 
+sudo ftcat -v /dev/litmus/ft_cpu_trace3 ${OH_EVENTS} > ${ST_TRACE_FOLDER}/oh-${ST_TRACE_NAME}-3.bin &
 fi
 
+echo "Start tracing IPI latency"
 if [[ ${FLAG_FTCAT_FIFO} == "1" ]];then
 	echo "set ftcat to highest priority in FIFO scheduler"
 	${LIBLITMUS_ROOT}/set_fifo.sh ftcat
@@ -118,16 +120,16 @@ if [[ ${FLAG_FTCAT_FIFO} == "1" ]];then
 fi
 # start feather message trace for IPI trace logs
 if [[ "${FLAG_TRACE_IPI}" == "1" ]]; then
-ftcat /dev/litmus/ft_msg_trace0 SEND_RESCHED_START SEND_RESCHED_END > ${ST_TRACE_FOLDER}/oh-${ST_MSG_TRACE_NAME}-0.bin &
-ftcat /dev/litmus/ft_msg_trace1 SEND_RESCHED_START SEND_RESCHED_END > ${ST_TRACE_FOLDER}/oh-${ST_MSG_TRACE_NAME}-1.bin &
-ftcat /dev/litmus/ft_msg_trace2 SEND_RESCHED_START SEND_RESCHED_END > ${ST_TRACE_FOLDER}/oh-${ST_MSG_TRACE_NAME}-2.bin &
-ftcat /dev/litmus/ft_msg_trace3 SEND_RESCHED_START SEND_RESCHED_END > ${ST_TRACE_FOLDER}/oh-${ST_MSG_TRACE_NAME}-3.bin &
+sudo ftcat /dev/litmus/ft_msg_trace0 SEND_RESCHED_START SEND_RESCHED_END > ${ST_TRACE_FOLDER}/oh-${ST_MSG_TRACE_NAME}-0.bin &
+sudo ftcat /dev/litmus/ft_msg_trace1 SEND_RESCHED_START SEND_RESCHED_END > ${ST_TRACE_FOLDER}/oh-${ST_MSG_TRACE_NAME}-1.bin &
+sudo ftcat /dev/litmus/ft_msg_trace2 SEND_RESCHED_START SEND_RESCHED_END > ${ST_TRACE_FOLDER}/oh-${ST_MSG_TRACE_NAME}-2.bin &
+sudo ftcat /dev/litmus/ft_msg_trace3 SEND_RESCHED_START SEND_RESCHED_END > ${ST_TRACE_FOLDER}/oh-${ST_MSG_TRACE_NAME}-3.bin &
 fi
 
 # now at liblitmus folder
 # Run one test case
 #overhead_measurement_case ${CASE}
-${TASKSET_ROOT}/numtasks${NUM_TASKS}/dom${dom_id}/task${case}_${env}.sh
+${TASKSET_ROOT}/numtasks${NUM_TASKS}/dom${dom_id}/task${CASE}_${env}.sh
 #generate_workload ${TYPE} ${NUM_TASKS} ${RTTASK}
 
 sleep 1
@@ -136,15 +138,15 @@ if [[ "${WAIT}" == "-w" ]]; then
 fi
 sleep ${DUR}
 
-killall st_trace
-killall -2 ftcat
-killall cat
+sudo killall st_trace
+sudo killall -2 ftcat
+sudo killall cat
 
 for ((j=0;j<100;j+=1));do
-	killall -9 ca_spin &> /dev/null &
-	killall -9 ca_spinwrite &> /dev/null &
-	killall -9 rtspin &> /dev/null &
-	killall -9 ${RTTASK} &> /dev/null &
+	sudo killall -9 ca_spin &> /dev/null &
+	sudo killall -9 ca_spinwrite &> /dev/null &
+	sudo killall -9 rtspin &> /dev/null &
+	sudo killall -9 ${RTTASK} &> /dev/null &
 done
 
 check_system_idle
@@ -153,21 +155,21 @@ if [[ "${i}" == "${MAX_CHECK_STATUS}" ]]; then
 	echo "[ATTENTION] Has task remaining in system after experiment!"
 	echo "Force all RT tasks exit..."
 	echo "killall -9 rtspin"
-	killall -9 rtspin &> /dev/null
-	killall -9 ca_spin &> /dev/null
-	killall -9 ca_spinwrite &> /dev/null
-	killall -9 ${RTTASK} &> /dev/null
-	killall -9 ${RTTASK} &> /dev/null
-	killall -9 ${RTTASK} &> /dev/null
-	killall -9 ${RTTASK} &> /dev/null
+	sudo killall -9 rtspin &> /dev/null
+	sudo killall -9 ca_spin &> /dev/null
+	sudo killall -9 ca_spinwrite &> /dev/null
+	sudo killall -9 ${RTTASK} &> /dev/null
+	sudo killall -9 ${RTTASK} &> /dev/null
+	sudo killall -9 ${RTTASK} &> /dev/null
+	sudo killall -9 ${RTTASK} &> /dev/null
 	check_system_idle
 fi
 
 #sleep 3
 #killall cat
-killall st_trace
-killall -2 ftcat
-killall cat
+sudo killall st_trace
+sudo killall -2 ftcat
+sudo killall cat
 #sleep 1
 
 #for((i=0; i<10; i+=1));do
