@@ -170,7 +170,7 @@ def main():
 
     parse_csv(csv_filename);
     sort_data(oh_datas);
-    print_oh_datas(oh_datas);
+    #print_oh_datas(oh_datas);
     filter_data(oh_datas);
     cal_stat(oh_datas, oh_stats);
     write_stats_to_files(oh_stats, stats_files);
