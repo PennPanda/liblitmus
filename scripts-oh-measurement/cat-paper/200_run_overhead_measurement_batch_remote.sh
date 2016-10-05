@@ -36,7 +36,7 @@ do
             fi
             xen_trace_file=${xen_trace_folder}/xentrace_test${case}_dur${DUR}_wait${WAIT}_sched${alg}_type${type}_numtasks${num_tasks}_rt${RTTASK}_xen_env${ENV}
             # trace sched related events
-            xentrace -D -e 0x0002f000 -T ${DUR} ${xen_trace_file}
+            xentrace -D -e 0x0001f000 -T ${DUR} ${xen_trace_file}
             echo "sleep ${DUR}"
             sleep ${DUR}
             sleep 20

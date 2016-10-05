@@ -36,6 +36,7 @@ def wait():
 
 def parse_csv(csv_filename):
     print(csv_filename)
+    num_lines = 0
     with open(csv_filename,'r') as csv_file:
         for line in csv_file:
             cols = line.split()
@@ -54,8 +55,11 @@ def parse_csv(csv_filename):
             if index == len(evts_name):
                 # this line not match any interesting event
                 continue;
-            oh_lines[index].append(cols);
+            #oh_lines[index].append(cols);
             oh_datas[index].append(float(cols[8]));
+            num_lines += 1;
+            if num_lines % 10000000 == 0:
+                print "Processed", num_lines, "lines\n"
             #print "-", oh_lines[index], "\n"
             #print "=", oh_datas[index], "\n"
             #wait();
