@@ -15,17 +15,20 @@ evts_name.append('oh_sched_latency')
 evts_name.append('oh_context_switch')
 evts_name.append('oh_context_saved')
 
+oh_sched_dict = {}
+oh_cxt_switch_dict = {}
+oh_cxt_saved_dict = {}
 oh_datas = []
-oh_lines = []
+#oh_lines = []
 oh_stats = []
 stats_files = [];
 # initialize three lists for do_sched, context_switch, context_saved events
 oh_datas.append([])
 oh_datas.append([])
 oh_datas.append([])
-oh_lines.append([])
-oh_lines.append([])
-oh_lines.append([])
+#oh_lines.append([])
+#oh_lines.append([])
+#oh_lines.append([])
 
 def wait():
     try:
@@ -44,36 +47,70 @@ def parse_csv(csv_filename):
             #print(cols[4])
             if len(cols) < 9:
                 continue
-            index = 0
-            for evt_name in evts_name:
-                #print "cols[4]", cols[4]
-                #print evt_name
-                if evt_name == cols[4]:
-                    #print('Find line:', cols)
-                    break;
-                index += 1;
-            if index == len(evts_name):
-                # this line not match any interesting event
+            if cols[4] == "oh_sched_latency":
+                if oh_sched_dict.get(float(cols[8]), -1) == -1:
+                    oh_sched_dict[float(cols[8])] = 1;
+                else:
+                    oh_sched_dict[float(cols[8])] += 1;
+            elif cols[4] == "oh_context_switch" :
+                if oh_cxt_switch_dict.get(float(cols[8]), -1) == -1:
+                    oh_cxt_switch_dict[float(cols[8])] = 1;
+                else:
+                    oh_cxt_switch_dict[float(cols[8])] += 1;
+            elif cols[4] == "oh_context_saved" :
+                if oh_cxt_saved_dict.get(float(cols[8]), -1) == -1:
+                    oh_cxt_saved_dict[float(cols[8])] = 1;
+                else:
+                    oh_cxt_saved_dict[float(cols[8])] += 1;
+            else:
                 continue;
+
+            # map to dictionary
             #oh_lines[index].append(cols);
-            oh_datas[index].append(float(cols[8]));
+            #oh_datas[index].append(float(cols[8]));
             num_lines += 1;
             if num_lines % 10000000 == 0:
                 print "Processed", num_lines, "lines\n"
-            #print "-", oh_lines[index], "\n"
-            #print "=", oh_datas[index], "\n"
-            #wait();
-            #print(cols[4], cols[8]);
 
-def print_oh_datas(oh_lines, oh_datas):
+def print_oh_datas(oh_datas):
     #for oh_line in oh_lines:
     #    print oh_line, "\n"
     for oh_data in oh_datas:
         print oh_data, "\n"
 
 def sort_data(oh_datas):
-    for i in range(len(oh_datas)):
-        oh_datas[i].sort(key=int);
+    # oh_sched_latency, oh_context_switch, oh_context_saved
+    oh_sched_keys = oh_sched_dict.keys();
+    oh_cxt_switch_keys = oh_cxt_switch_dict.keys();
+    oh_cxt_saved_keys = oh_cxt_saved_dict.keys();
+
+    oh_sched_keys.sort();
+    oh_cxt_switch_keys.sort();
+    oh_cxt_saved_keys.sort();
+
+    for i in range(len(oh_sched_keys)):
+        val = oh_sched_dict.get(oh_sched_keys[i], -1)
+        if val < 0:
+            print "ERR: oh_sched_dict", oh_sched_keys[i], " should always exit"
+            sys.exit(1)
+        for j in range(val):
+            oh_datas[0].append(oh_sched_keys[i])
+
+    for i in range(len(oh_cxt_switch_keys)):
+        val = oh_cxt_switch_dict.get(oh_cxt_switch_keys[i], -1)
+        if val < 0:
+            print "ERR: oh_cxt_switch_dict", oh_cxt_switch_keys[i], " should always exit"
+            sys.exit(1)
+        for j in range(val):
+            oh_datas[1].append(oh_cxt_switch_keys[i])
+
+    for i in range(len(oh_cxt_saved_keys)):
+        val = oh_cxt_saved_dict.get(oh_cxt_saved_keys[i], -1)
+        if val < 0:
+            print "ERR: oh_cxt_saved_dict", oh_cxt_saved_keys[i], " should always exit"
+            sys.exit(1)
+        for j in range(val):
+            oh_datas[2].append(oh_cxt_saved_keys[i])
 
 def remove_outlier(oh_data):
     num_elems = len(oh_data);
@@ -133,7 +170,7 @@ def main():
 
     parse_csv(csv_filename);
     sort_data(oh_datas);
-    #print_oh_datas(oh_lines, oh_datas);
+    #print_oh_datas(oh_datas);
     filter_data(oh_datas);
     cal_stat(oh_datas, oh_stats);
     write_stats_to_files(oh_stats, stats_files);
