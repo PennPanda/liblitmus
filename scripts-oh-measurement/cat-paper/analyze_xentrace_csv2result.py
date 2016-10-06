@@ -79,7 +79,7 @@ def remove_outlier(oh_data):
     num_elems = len(oh_data);
     num_to_remove = num_elems / 100
     for i in range(len(oh_data)):
-        if i <= num_to_remove:
+        if i < num_to_remove:
             del oh_data[0];
             del oh_data[len(oh_data)-1]
     print "size of new_oh_data:", len(oh_data), " size of old_oh_data:", num_elems

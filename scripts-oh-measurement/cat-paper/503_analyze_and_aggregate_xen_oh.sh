@@ -16,10 +16,6 @@ TRACEBIN_ROOT=${ROOT}/trace_bin
 TRACECSV_ROOT=${ROOT}/trace_csv
 TRACEOH_ROOT=${ROOT}/trace_oh
 
-declare -a EVENTS=( "CXS_START" "SCHED_START" "SCHED2_START" "RELEASE_START" "RELEASE_LATENCY" )
-
-for event in "${EVENTS[@]}"
-do
 for ((case=${case_min}; case<=${case_max}; case+=${case_step}));do
 for type in "${TYPES[@]}"
 do
@@ -30,6 +26,7 @@ do
             for((; 1;));do
                 num_pythons=`ps -a | grep python |wc -l`
                 if [[ ${num_pythons} < ${NUM_PARALLELS} ]]; then
+                    sleep 1
                     break;
                 else
                     sleep 30
@@ -54,10 +51,9 @@ do
             if [[ -f ${output_cxt_saved} ]]; then
                 rm -f ${output_cxt_saved}
             fi
-            echo "python ./analyze_xentrace_csv2result_v2.py ${input_csv_file} ${output_do_sched} ${output_cxt_switch} ${output_cxt_saved} &"
-            python ./analyze_xentrace_csv2result_v2.py ${input_csv_file} ${output_do_sched} ${output_cxt_switch} ${output_cxt_saved} &
+            echo "python ./analyze_xentrace_csv2result_v3.py ${input_csv_file} ${output_do_sched} ${output_cxt_switch} ${output_cxt_saved} &"
+            python ./analyze_xentrace_csv2result_v3.py ${input_csv_file} ${output_do_sched} ${output_cxt_switch} ${output_cxt_saved} &
 	    done
 	done
-done
 done
 done

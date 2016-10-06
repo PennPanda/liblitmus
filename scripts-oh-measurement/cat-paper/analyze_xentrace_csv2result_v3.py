@@ -19,6 +19,7 @@ oh_sched_dict = {}
 oh_cxt_switch_dict = {}
 oh_cxt_saved_dict = {}
 oh_datas = []
+oh_datas_filtered = []
 #oh_lines = []
 oh_stats = []
 stats_files = [];
@@ -26,6 +27,9 @@ stats_files = [];
 oh_datas.append([])
 oh_datas.append([])
 oh_datas.append([])
+oh_datas_filtered.append([])
+oh_datas_filtered.append([])
+oh_datas_filtered.append([])
 #oh_lines.append([])
 #oh_lines.append([])
 #oh_lines.append([])
@@ -70,7 +74,7 @@ def parse_csv(csv_filename):
             #oh_datas[index].append(float(cols[8]));
             num_lines += 1;
             if num_lines % 10000000 == 0:
-                print "Processed", num_lines, "lines\n"
+                print "Processed", num_lines, "lines"
 
 def print_oh_datas(oh_datas):
     #for oh_line in oh_lines:
@@ -85,8 +89,11 @@ def sort_data(oh_datas):
     oh_cxt_saved_keys = oh_cxt_saved_dict.keys();
 
     oh_sched_keys.sort();
+    print "Finish sorting oh_sched keys"
     oh_cxt_switch_keys.sort();
+    print "Finish sorting oh_cxt_switch keys"
     oh_cxt_saved_keys.sort();
+    print "Finish sorting oh_cxt_saved keys"
 
     for i in range(len(oh_sched_keys)):
         val = oh_sched_dict.get(oh_sched_keys[i], -1)
@@ -95,6 +102,7 @@ def sort_data(oh_datas):
             sys.exit(1)
         for j in range(val):
             oh_datas[0].append(oh_sched_keys[i])
+    print "Finish sorting oh_sched values"
 
     for i in range(len(oh_cxt_switch_keys)):
         val = oh_cxt_switch_dict.get(oh_cxt_switch_keys[i], -1)
@@ -103,6 +111,7 @@ def sort_data(oh_datas):
             sys.exit(1)
         for j in range(val):
             oh_datas[1].append(oh_cxt_switch_keys[i])
+    print "Finish sorting oh_cxt_switch values"
 
     for i in range(len(oh_cxt_saved_keys)):
         val = oh_cxt_saved_dict.get(oh_cxt_saved_keys[i], -1)
@@ -111,17 +120,20 @@ def sort_data(oh_datas):
             sys.exit(1)
         for j in range(val):
             oh_datas[2].append(oh_cxt_saved_keys[i])
+    print "Finish sorting oh_cxt_saved values"
 
-def remove_outlier(oh_data):
+def remove_outlier(oh_data, oh_data_filtered):
     num_elems = len(oh_data);
     num_to_remove = num_elems / 100
-    for i in range(len(oh_data)):
-        if i < num_to_remove:
-            del oh_data[0];
-            del oh_data[len(oh_data)-1]
-    print "size of new_oh_data:", len(oh_data), " size of old_oh_data:", num_elems
+    print "Remove", num_to_remove, "outliers..."
+    for i in range(num_elems):
+        if i < num_to_remove or i > num_elems - num_to_remove - 1:
+            continue;
+        oh_data_filtered.append(float(oh_data[i]));
+    print "Size of new_oh_data:", len(oh_data), " size of old_oh_data:", num_elems
 
 def filter_data(oh_datas):
+    print "Filter_data..."
     size_old = [];
     size_new = [];
     for i in range(len(oh_datas)):
@@ -132,7 +144,9 @@ def filter_data(oh_datas):
         print size_old[i], "should be >", size_new[i]
 
 def cal_stat(oh_datas, oh_stats):
+    print "Cal stat"
     for i in range(len(oh_datas)):
+        print "cal_stat oh type ", i, "starts..."
         oh_data = oh_datas[i];
         oh_mean = np.mean(oh_data)
         oh_median = np.median(oh_data)
@@ -142,12 +156,15 @@ def cal_stat(oh_datas, oh_stats):
         oh_99percentile = np.percentile(oh_data, 99);
         oh_95percentile = np.percentile(oh_data, 95);
         oh_stats.append([oh_mean, oh_median, oh_stddev, oh_max, oh_min, oh_99percentile, oh_95percentile]);
+        #oh_stats.append([oh_mean, oh_median, oh_max, oh_min, oh_99percentile, oh_95percentile]);
         print oh_stats[i]
 
 def write_stats_to_files(oh_stats, stats_files):
     for i in range(len(oh_stats)):
         print >> stats_files[i], '#mean', '\t', 'median', '\t', 'stddev', '\t', 'max', '\t', 'min', '\t', '99percentile', '\t', '95percentile'
         print >> stats_files[i], oh_stats[i][0], '\t', oh_stats[i][1], '\t', oh_stats[i][2], '\t', oh_stats[i][3], '\t', oh_stats[i][4], '\t', oh_stats[i][5], '\t', oh_stats[i][6]
+        #print >> stats_files[i], '#mean', '\t', 'median', '\t', 'max', '\t', 'min', '\t', '99percentile', '\t', '95percentile'
+        #print >> stats_files[i], oh_stats[i][0], '\t', oh_stats[i][1], '\t', oh_stats[i][2], '\t', oh_stats[i][3], '\t', oh_stats[i][4], '\t', oh_stats[i][5]
 
         
 def main():
@@ -171,8 +188,22 @@ def main():
     parse_csv(csv_filename);
     sort_data(oh_datas);
     #print_oh_datas(oh_datas);
-    filter_data(oh_datas);
-    cal_stat(oh_datas, oh_stats);
+
+    # filter data
+    #filter_data(oh_datas);
+    print "Filter_data..."
+    size_old = [];
+    size_new = [];
+    for i in range(len(oh_datas)):
+        size_old.append(len(oh_datas[i]));
+        remove_outlier(oh_datas[i], oh_datas_filtered[i]);
+        size_new.append(len(oh_datas_filtered[i]));
+    for i in range(len(size_old)):
+        print size_old[i], "should be >", size_new[i]
+    oh_datas[0] = [];
+    oh_datas[1] = [];
+    oh_datas[2] = [];
+    cal_stat(oh_datas_filtered, oh_stats);
     write_stats_to_files(oh_stats, stats_files);
 
 if __name__ == "__main__":
