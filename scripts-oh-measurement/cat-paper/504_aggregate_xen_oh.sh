@@ -14,6 +14,8 @@ TRACEBIN_ROOT=${ROOT}/trace_bin
 TRACECSV_ROOT=${ROOT}/trace_csv
 TRACEOH_ROOT=${ROOT}/trace_oh
 
+for alg in "${Algs[@]}"; do
+for type in "${TYPES[@]}";do
 for ((num_tasks=${num_tasks_min}; num_tasks<=${num_tasks_max}; num_tasks+=${num_tasks_step}));do
     output_oh_folder=${TRACEOH_ROOT}/numtasks${num_tasks}
     output_do_sched=${output_oh_folder}/xentrace_dur${DUR}_wait${WAIT}_sched${alg}_type${type}_numtasks${num_tasks}_rt${RTTASK}_xen_env${ENV}-do_sched.csv
@@ -33,10 +35,6 @@ for ((num_tasks=${num_tasks_min}; num_tasks<=${num_tasks_max}; num_tasks+=${num_
     fi
 
     for ((case=${case_min}; case<=${case_max}; case+=${case_step}));do
-    for type in "${TYPES[@]}"
-    do
-        for alg in "${Algs[@]}"
-        do
                 input_oh_folder=${TRACEOH_ROOT}/numtasks${num_tasks}/xen
                 input_do_sched=${input_oh_folder}/xentrace_test${case}_dur${DUR}_wait${WAIT}_sched${alg}_type${type}_numtasks${num_tasks}_rt${RTTASK}_xen_env${ENV}-do_sched.csv
                 input_cxt_switch=${input_oh_folder}/xentrace_test${case}_dur${DUR}_wait${WAIT}_sched${alg}_type${type}_numtasks${num_tasks}_rt${RTTASK}_xen_env${ENV}-cxt_switch.csv
@@ -49,8 +47,7 @@ for ((num_tasks=${num_tasks_min}; num_tasks<=${num_tasks_max}; num_tasks+=${num_
                 tail -n 1 ${input_do_sched} >> ${output_do_sched}
                 tail -n 1 ${input_cxt_switch} >> ${output_cxt_switch}
                 tail -n 1 ${input_cxt_saved} >> ${output_cxt_saved}
-        done
     done
-    done
-
+done
+done
 done
